@@ -1,0 +1,27 @@
+{
+  "name": "Mutfak Ekranı",
+  "short_name": "Mutfak",
+  "description": "Kafe Mutfak Sipariş Takip Ekranı",
+  "start_url": "/mutfak",
+  "scope": "/mutfak",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0a0a0a",
+  "theme_color": "#27A0B1",
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "/icons/icon-mutfak-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-mutfak-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "food"]
+}

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bağlantı Yok — Kafe POS</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      background:#0a0a0a;color:#f0ece0;font-family:'Segoe UI',system-ui,sans-serif;
+      height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;
+      text-align:center;padding:24px;
+    }
+    .ico{font-size:4rem}
+    h1{font-size:1.4rem;font-weight:800;color:#27A0B1}
+    p{color:#666;font-size:.9rem;max-width:300px;line-height:1.6}
+    button{
+      margin-top:8px;padding:12px 28px;background:#27A0B1;color:#fff;
+      border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;
+    }
+    button:hover{background:#1d8a9a}
+  </style>
+</head>
+<body>
+  <div class="ico">📡</div>
+  <h1>Bağlantı Kesildi</h1>
+  <p>Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edin ve tekrar deneyin.</p>
+  <button onclick="location.reload()">🔄 Tekrar Dene</button>
+</body>
+</html>

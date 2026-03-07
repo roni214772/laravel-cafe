@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+
+class SubscriptionActive
+{
+    // Bu e-posta admin — abonelik kontrolünden muaf
+    private const ADMIN_EMAIL = 'bruskefrin47@gmail.com';
+
+    // Abonelik kontrolü yapılmayan rotalar
+    private const EXEMPT_ROUTES = [
+        'subscription.select',
+        'subscription.request',
+        'subscription.pending',
+        'payment.checkout',
+        'payment.confirm-transfer',
+        'payment.result',
+        'logout',
+    ];
+
+    public function handle(Request $request, Closure $next)
+    {
+        $user = auth()->user();
+
+        // Admin muaf
+        if ($user->email === self::ADMIN_EMAIL) {
+            return $next($request);
+        }
+
+        // Muaf rotalar
+        if (in_array($request->route()?->getName(), self::EXEMPT_ROUTES)) {
+            return $next($request);
+        }
+
+        // Aboneliği aktif mi?
+        if ($user->isSubscriptionActive()) {
+            return $next($request);
+        }
+
+        // Yenileme talebi bekliyor ama eski abonelik süresi hâlâ geçerliyse → geçir
+        if ($user->subscription_status === 'pending'
+            && $user->subscription_expires_at
+            && $user->subscription_expires_at->isFuture()) {
+            return $next($request);
+        }
+
+        // Hiç abonelik talebi göndermemiş → seçim sayfasına
+        if ($user->subscription_status === 'none') {
+            return redirect()->route('subscription.select');
+        }
+
+        // Beklemede ya da reddedildi → bilgi sayfasına
+        return redirect()->route('subscription.pending');
+    }
+}
