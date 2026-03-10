@@ -37,7 +37,7 @@ p{font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:24px}
 .btn-outline{background:transparent;color:var(--muted);border:1px solid var(--border2)}
 .btn-outline:hover{color:var(--text);border-color:var(--primary)}
 
-@media(max-width:400px){ 
+@media(max-width:400px){   
   .card{padding:32px 20px}
 }
 </style>

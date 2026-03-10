@@ -909,6 +909,7 @@
           <button class="pbtn secondary" onclick="goMasalar()">◄ Masalar</button>
         </div>
         <div class="payment-btns" style="margin-top:4px">
+          <button class="pbtn secondary" id="btnPosDevice" onclick="posOdemeGonder()" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none">🏧 POS Cihazına Gönder</button>
           <button class="pbtn secondary" onclick="hesabiBol()">Hesabı Böl</button>
           <button class="pbtn secondary" onclick="openTransfer()">⇔ Transfer</button>
           <button class="pbtn secondary" onclick="printFis()"> Fiş</button>
@@ -1233,6 +1234,68 @@
       </div>
     </div>
 
+    <hr class="theme-divider">
+
+    <!-- POS CİHAZ AYARLARI -->
+    <div class="theme-section">
+      <div class="theme-section-label">🏧 POS Cihaz Entegrasyonu</div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span id="posBridgeStatus" style="width:10px;height:10px;border-radius:50%;background:#ef4444;flex-shrink:0" title="Bağlantı durumu"></span>
+        <span id="posBridgeStatusText" style="font-size:.7rem;color:var(--muted2)">Köprü bağlantısı kontrol ediliyor...</span>
+      </div>
+
+      <div class="fg" style="margin-bottom:8px">
+        <label style="font-size:.72rem;font-weight:600">Köprü Adresi</label>
+        <input id="posBridgeUrl" type="text" class="form-control" placeholder="http://127.0.0.1:3457" style="font-size:.72rem">
+      </div>
+
+      <div class="fg" style="margin-bottom:8px">
+        <label style="font-size:.72rem;font-weight:600">Bağlantı Tipi</label>
+        <select id="posBridgeMode" class="form-control" style="font-size:.72rem">
+          <option value="serial">Seri Port (USB/COM)</option>
+          <option value="tcp">TCP/IP (Ağ)</option>
+        </select>
+      </div>
+
+      <div id="posSerialSettings">
+        <div class="fg" style="margin-bottom:8px">
+          <label style="font-size:.72rem;font-weight:600">Seri Port <button type="button" style="font-size:.6rem;background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;margin-left:4px" onclick="posListPorts()">Portları Tara</button></label>
+          <select id="posSerialPath" class="form-control" style="font-size:.72rem">
+            <option value="COM3">COM3</option>
+            <option value="COM4">COM4</option>
+            <option value="COM5">COM5</option>
+          </select>
+        </div>
+        <div class="fg" style="margin-bottom:8px">
+          <label style="font-size:.72rem;font-weight:600">Baud Rate</label>
+          <select id="posSerialBaud" class="form-control" style="font-size:.72rem">
+            <option value="9600" selected>9600</option>
+            <option value="19200">19200</option>
+            <option value="38400">38400</option>
+            <option value="115200">115200</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="posTcpSettings" style="display:none">
+        <div class="fg" style="margin-bottom:8px">
+          <label style="font-size:.72rem;font-weight:600">POS Cihaz IP</label>
+          <input id="posTcpHost" type="text" class="form-control" placeholder="192.168.1.100" style="font-size:.72rem">
+        </div>
+        <div class="fg" style="margin-bottom:8px">
+          <label style="font-size:.72rem;font-weight:600">POS Cihaz Port</label>
+          <input id="posTcpPort" type="number" class="form-control" placeholder="8000" style="font-size:.72rem">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button type="button" class="btn-ok" style="flex:1;font-size:.7rem;padding:6px" onclick="posSaveConfig()">Ayarları Kaydet</button>
+        <button type="button" class="btn-cancel" style="flex:1;font-size:.7rem;padding:6px" onclick="posTestPayment()">🧪 Test Et</button>
+      </div>
+      <div id="posTestResult" style="font-size:.68rem;color:var(--muted2);margin-top:6px;display:none"></div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('ayarlar')">İptal</button>
       <button class="btn-ok" onclick="saveSettings()">Kaydet</button>
@@ -1442,9 +1505,16 @@ function renderOrder(data) {
   const lbl = document.getElementById('totalToggleLabel');
   if(lbl) lbl.textContent = 'Toplam: ' + fmt(total) + ' ₺';
   const paid = parseFloat(document.getElementById('alinanTutar').value)||0;
-  const effectivePaid = paid > 0 ? paid : total;
-  document.getElementById('odenenAmt').textContent  = fmt(effectivePaid)+' ₺';
-  document.getElementById('kalanAmt').textContent   = fmt(Math.max(0,total-effectivePaid))+' ₺';
+  // Daha önce ödenen tutar (order'dan)
+  const prevPaid = currentOrder ? (parseFloat(currentOrder.paid)||0) : 0;
+  const effectiveNewPay = paid > 0 ? paid : (total - prevPaid);
+  const totalPaidSoFar = prevPaid + (paid > 0 ? paid : 0);
+  const displayPaid = paid > 0 ? totalPaidSoFar : total;
+  const displayDue  = Math.max(0, total - displayPaid);
+  document.getElementById('odenenAmt').textContent  = fmt(prevPaid > 0 ? totalPaidSoFar : (paid > 0 ? paid : total))+' ₺';
+  document.getElementById('kalanAmt').textContent   = fmt(displayDue)+' ₺';
+  // Kalan > 0 ise kırmızı göster
+  document.getElementById('kalanAmt').style.color = displayDue > 0 ? 'var(--red)' : 'var(--green)';
 
   if(room) updateTableCard(room);
   document.getElementById('orderNote').value = data.order?.note || '';
@@ -1565,11 +1635,15 @@ async function masayiSil(){
 async function odemeAl(){
   if(!selectedRoomId){toast(' Masa seçili değil');return}
   if(!currentItems.length){toast(' Sipariş boş');return}
-  if(!confirm('Ödeme alınsın mı?'))return;
+  const paidInput = parseFloat(document.getElementById('alinanTutar').value)||0;
+  const confirmMsg = paidInput > 0
+    ? `${paidInput.toFixed(2)} ₺ kısmi ödeme alınsın mı?`
+    : 'Tüm tutar tahsil edilsin mi?';
+  if(!confirm(confirmMsg))return;
   try {
     const d=await api(`/adisyon/masa/${selectedRoomId}/odeme`,'POST',{
       payment_type:document.getElementById('odemeTipi').value,
-      paid:parseFloat(document.getElementById('alinanTutar').value)||0,
+      paid:paidInput,
       kdv:parseFloat(document.getElementById('kdv').value)||0,
       servis:parseFloat(document.getElementById('servis').value)||0,
       indirim_tipi:document.getElementById('indirimTipi').value,
@@ -1577,14 +1651,22 @@ async function odemeAl(){
     });
     if(d.success){
       updateTableCard(d.room);
-      currentItems=[];currentOrder=null;
-      document.getElementById('orderItems').innerHTML='<div class="no-table"></div>';
-      document.getElementById('orderTotals').style.display='none';
-      document.getElementById('paymentArea').style.display='none';
       document.getElementById('alinanTutar').value='';
-      document.getElementById('orderNote').value='';
-      toast('✓ Ödeme alındı');
-      setTimeout(goMasalar, 1200);
+      if(d.closed){
+        // Tamamen ödendi — masa kapandı
+        currentItems=[];currentOrder=null;
+        document.getElementById('orderItems').innerHTML='<div class="no-table"></div>';
+        document.getElementById('orderTotals').style.display='none';
+        document.getElementById('paymentArea').style.display='none';
+        document.getElementById('orderNote').value='';
+        toast(`✓ Ödeme tamamlandı (${d.total_paid.toFixed(2)} ₺)`);
+        setTimeout(goMasalar, 1200);
+      } else {
+        // Kısmi ödeme — masa hâlâ açık
+        currentOrder = d.order;
+        renderOrder({room: d.room, order: d.order, items: currentItems});
+        toast(`✓ ${d.paid_now.toFixed(2)} ₺ alındı — Kalan: ${d.due.toFixed(2)} ₺`);
+      }
     } else {
       toast('⚠️ ' + (d.error || d.message || 'Ödeme alınamadı'));
     }
@@ -2422,6 +2504,219 @@ function switchPosTab(tab) {
 document.querySelectorAll('.modal-bg').forEach(bg=>{
   bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('open')});
 });
+
+// ══════════════════════════════════════════════════════════════════════
+//  POS CİHAZI KÖPRÜ ENTEGRASYONU
+// ══════════════════════════════════════════════════════════════════════
+
+const POS_BRIDGE_DEFAULTS = {
+  url: 'http://127.0.0.1:3457',
+  mode: 'serial',
+  serial: { path: 'COM3', baudRate: 9600 },
+  tcp: { host: '192.168.1.100', port: 8000 },
+};
+
+let posBridgeOnline = false;
+
+// ── POS ayarlarını localStorage'dan yükle ──
+function posLoadSettings() {
+  try {
+    return JSON.parse(localStorage.getItem('pos_bridge_settings') || '{}');
+  } catch { return {}; }
+}
+
+function posGetUrl() {
+  const s = posLoadSettings();
+  return (s.url || POS_BRIDGE_DEFAULTS.url).replace(/\/+$/, '');
+}
+
+// ── Mod değişikliğinde alanları göster/gizle ──
+document.getElementById('posBridgeMode')?.addEventListener('change', function() {
+  document.getElementById('posSerialSettings').style.display = this.value === 'serial' ? '' : 'none';
+  document.getElementById('posTcpSettings').style.display = this.value === 'tcp' ? '' : 'none';
+});
+
+// ── Seri portları tara ──
+async function posListPorts() {
+  try {
+    const res = await fetch(posGetUrl() + '/ports', { signal: AbortSignal.timeout(3000) });
+    const data = await res.json();
+    const sel = document.getElementById('posSerialPath');
+    if (data.ports && data.ports.length) {
+      sel.innerHTML = '';
+      data.ports.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.path;
+        opt.textContent = p.path + (p.manufacturer ? ` (${p.manufacturer})` : '');
+        sel.appendChild(opt);
+      });
+      toast('✓ ' + data.ports.length + ' port bulundu');
+    } else {
+      toast('⚠️ Bağlı seri port bulunamadı');
+    }
+  } catch (e) {
+    toast('⚠️ Köprü servisi çalışmıyor');
+  }
+}
+
+// ── POS bridge durumunu kontrol et ──
+async function posCheckStatus() {
+  const dot = document.getElementById('posBridgeStatus');
+  const txt = document.getElementById('posBridgeStatusText');
+  const btn = document.getElementById('btnPosDevice');
+  try {
+    const res = await fetch(posGetUrl() + '/status', { signal: AbortSignal.timeout(2000) });
+    const data = await res.json();
+    if (data.online) {
+      posBridgeOnline = true;
+      if (dot) dot.style.background = '#10b981';
+      if (txt) txt.textContent = '✓ Köprü bağlı — Mod: ' + (data.mode === 'serial' ? 'Seri Port (' + data.serial.path + ')' : 'TCP (' + data.tcp.host + ':' + data.tcp.port + ')');
+      if (btn) { btn.style.opacity = '1'; btn.title = 'POS cihazına ödeme gönder'; }
+      return true;
+    }
+  } catch {}
+  posBridgeOnline = false;
+  if (dot) dot.style.background = '#ef4444';
+  if (txt) txt.textContent = '✗ Köprü bağlantısı yok — pos-bridge çalışıyor mu?';
+  if (btn) { btn.style.opacity = '0.5'; btn.title = 'POS köprüsü bağlı değil — Ayarlardan kontrol edin'; }
+  return false;
+}
+
+// ── Ayarları kaydet ──
+async function posSaveConfig() {
+  const url = document.getElementById('posBridgeUrl').value.trim() || POS_BRIDGE_DEFAULTS.url;
+  const mode = document.getElementById('posBridgeMode').value;
+
+  const settings = { url, mode };
+  localStorage.setItem('pos_bridge_settings', JSON.stringify(settings));
+
+  // Bridge'e de konfigürasyon gönder
+  try {
+    const body = { mode };
+    if (mode === 'serial') {
+      body.serial = {
+        path: document.getElementById('posSerialPath').value,
+        baudRate: parseInt(document.getElementById('posSerialBaud').value) || 9600,
+      };
+    } else {
+      body.tcp = {
+        host: document.getElementById('posTcpHost').value.trim() || '192.168.1.100',
+        port: parseInt(document.getElementById('posTcpPort').value) || 8000,
+      };
+    }
+    await fetch(url.replace(/\/+$/, '') + '/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(3000),
+    });
+    toast('✓ POS cihaz ayarları kaydedildi');
+  } catch {
+    toast('⚠️ Ayarlar yerel olarak kaydedildi (köprüye ulaşılamadı)');
+  }
+  posCheckStatus();
+}
+
+// ── Test ödeme ──
+async function posTestPayment() {
+  const result = document.getElementById('posTestResult');
+  result.style.display = '';
+  result.textContent = '⏳ Test ödeme gönderiliyor...';
+  result.style.color = 'var(--orange)';
+  try {
+    const res = await fetch(posGetUrl() + '/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: 1 }),
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json();
+    if (data.success) {
+      result.textContent = '✓ ' + data.message;
+      result.style.color = 'var(--green)';
+    } else {
+      result.textContent = '✗ ' + data.message;
+      result.style.color = 'var(--red)';
+    }
+  } catch (e) {
+    result.textContent = '✗ Köprü servisi çalışmıyor: ' + e.message;
+    result.style.color = 'var(--red)';
+  }
+}
+
+// ── ASIL FONKSİYON: POS cihazına ödeme gönder ──
+async function posOdemeGonder() {
+  if (!selectedRoomId) { toast('⚠️ Masa seçili değil'); return; }
+  if (!currentItems.length) { toast('⚠️ Sipariş boş'); return; }
+  if (!posBridgeOnline) {
+    toast('⚠️ POS köprüsü bağlı değil! Ayarlar > POS Cihaz Entegrasyonu bölümünden kontrol edin.');
+    return;
+  }
+
+  // Toplam hesapla
+  const sub = currentItems.reduce((s, i) => s + i.total, 0);
+  const kdvP = parseFloat(document.getElementById('kdv').value) || 0;
+  const serP = parseFloat(document.getElementById('servis').value) || 0;
+  const indT = document.getElementById('indirimTipi').value;
+  const indV = parseFloat(document.getElementById('indirimDeger').value) || 0;
+  let indirim = 0;
+  if (indT === 'Tutar') indirim = indV;
+  if (indT === 'Yuzde') indirim = sub * indV / 100;
+  const serAmt = sub * serP / 100;
+  const kdvAmt = (sub + serAmt - indirim) * kdvP / 100;
+  const total = sub + serAmt - indirim + kdvAmt;
+
+  // Daha önce ödenen tutar varsa kalan tutarı gönder
+  const prevPaid = currentOrder ? (parseFloat(currentOrder.paid) || 0) : 0;
+  const remaining = Math.max(0, total - prevPaid);
+
+  if (remaining <= 0) { toast('⚠️ Kalan tutar 0'); return; }
+  if (!confirm(`${remaining.toFixed(2)} ₺ POS cihazına gönderilsin mi?`)) return;
+
+  // Ödeme tipini otomatik "Kredi Kartı" yap
+  document.getElementById('odemeTipi').value = 'Kredi Kartı';
+
+  toast('⏳ POS cihazına gönderiliyor...');
+
+  try {
+    const res = await fetch(posGetUrl() + '/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: remaining }),
+      signal: AbortSignal.timeout(65000),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      toast('✓ POS ödeme onaylandı!');
+      // Kalan tutarı alınan tutar alanına yaz ve ödeme al
+      document.getElementById('alinanTutar').value = remaining.toFixed(2);
+      await odemeAl();
+    } else {
+      toast('✗ POS reddetti: ' + (data.message || 'Bilinmeyen hata'));
+    }
+  } catch (e) {
+    toast('✗ POS cihazına ulaşılamadı: ' + e.message);
+  }
+}
+
+// ── openSettings'e POS ayarlarını yükle ──
+const _originalOpenSettings = openSettings;
+openSettings = function() {
+  _originalOpenSettings();
+  // POS ayarlarını doldur
+  const s = posLoadSettings();
+  document.getElementById('posBridgeUrl').value = s.url || POS_BRIDGE_DEFAULTS.url;
+  document.getElementById('posBridgeMode').value = s.mode || POS_BRIDGE_DEFAULTS.mode;
+  document.getElementById('posBridgeMode').dispatchEvent(new Event('change'));
+  posCheckStatus();
+};
+
+// ── Sayfa yüklendiğinde POS durumunu kontrol et ──
+posCheckStatus();
+// 30 saniyede bir tekrar kontrol et
+setInterval(posCheckStatus, 30000);
+
 </script>
 <script>
   // PWA Service Worker kaydı

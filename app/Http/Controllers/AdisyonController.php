@@ -151,7 +151,7 @@ class AdisyonController extends Controller
         $servisPct    = (float) ($request->servis ?? 0);
         $indirimTipi  = $request->indirim_tipi ?? 'Yok';
         $indirimDeger = (float) ($request->indirim ?? 0);
-        $paid         = (float) ($request->paid ?? 0);
+        $paidNow      = (float) ($request->paid ?? 0);
 
         $paymentTypeMap = ['Nakit' => 'cash', 'Kredi Kartı' => 'card', 'Havale' => 'mixed'];
         $paymentType    = $paymentTypeMap[$request->payment_type] ?? 'cash';
@@ -163,26 +163,66 @@ class AdisyonController extends Controller
         $servisAmount = $subtotal * $servisPct / 100;
         $kdvAmount    = ($subtotal + $servisAmount - $indirim) * $kdvPct / 100;
         $total        = $subtotal + $servisAmount - $indirim + $kdvAmount;
-        if ($paid <= 0) $paid = $total;
-        $due          = max(0, $total - $paid);
 
-        $order->update([
+        // Daha önce ödenen tutarı al
+        $previouslyPaid = (float) $order->paid;
+
+        // Alınan tutar boşsa (0) → kalan tamamını al
+        if ($paidNow <= 0) {
+            $paidNow = max(0, $total - $previouslyPaid);
+        }
+
+        $totalPaid = $previouslyPaid + $paidNow;
+        $due       = max(0, round($total - $totalPaid, 2));
+
+        // Her ödemeyi payments tablosuna kaydet
+        Payment::create([
+            'pos_order_id' => $order->id,
+            'amount'       => $paidNow,
+            'type'         => $paymentType,
+        ]);
+
+        // Siparişi güncelle
+        $orderData = [
             'subtotal'     => $subtotal,
             'vat'          => $kdvAmount,
             'service'      => $servisAmount,
             'discount'     => $indirim,
             'total'        => $total,
-            'paid'         => $paid,
+            'paid'         => $totalPaid,
             'due'          => $due,
             'payment_type' => $paymentType,
             'note'         => $request->nota ?? $order->note,
-            'status'       => 'closed',
-            'closed_at'    => now(),
-        ]);
+        ];
 
-        $room->update(['status' => 'closed', 'closed_at' => now()]);
+        // Kalan 0 ise masayı kapat, değilse açık bırak
+        if ($due <= 0) {
+            $orderData['status']    = 'closed';
+            $orderData['closed_at'] = now();
+            $order->update($orderData);
+            $room->update(['status' => 'closed', 'closed_at' => now()]);
 
-        return response()->json(['success' => true, 'room' => $this->roomArray($room->fresh())]);
+            return response()->json([
+                'success'  => true,
+                'closed'   => true,
+                'paid_now' => $paidNow,
+                'total_paid' => $totalPaid,
+                'due'      => 0,
+                'room'     => $this->roomArray($room->fresh()),
+            ]);
+        } else {
+            $order->update($orderData);
+
+            return response()->json([
+                'success'    => true,
+                'closed'     => false,
+                'paid_now'   => $paidNow,
+                'total_paid' => $totalPaid,
+                'due'        => $due,
+                'room'       => $this->roomArray($room->fresh()),
+                'order'      => $this->orderArray($order->fresh()),
+            ]);
+        }
     }
     // ─── Fire draft items to kitchen (AJAX + WebSocket broadcast) ──────────
     public function fireTokitchen(Room $room)

@@ -33,5 +33,22 @@ start "Cafe Reverb" /MIN "%PHP%" artisan reverb:start --host=0.0.0.0 --port=8080
 :: Zamanlayici (her dakika calisir, gece 02:00'de otomatik yedek alir)
 start "Cafe Scheduler" /MIN "%PHP%" artisan schedule:work
 
+:: POS Cihaz Koprusu (Node.js)
+where node >nul 2>&1
+if not errorlevel 1 (
+  if exist "pos-bridge\server.js" (
+    if not exist "pos-bridge\node_modules" (
+      echo POS Bridge bagimliliklari yukleniyor...
+      cd pos-bridge
+      call npm install --silent >nul 2>&1
+      cd ..
+    )
+    start "POS Bridge" /MIN node pos-bridge\server.js
+    echo POS Cihaz Koprusu baslatildi (port 3457)
+  )
+) else (
+  echo Node.js bulunamadi - POS koprusu atlanıyor
+)
+
 timeout /t 6 /nobreak >nul
 start "" "http://localhost:8000/adisyon"

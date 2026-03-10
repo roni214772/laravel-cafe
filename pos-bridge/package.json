@@ -1,0 +1,13 @@
+{
+  "name": "cafe-pos-bridge",
+  "version": "1.0.0",
+  "description": "Kafe POS - Fiziksel POS cihazı köprüsü",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "list-ports": "node -e \"const{SerialPort}=require('serialport');SerialPort.list().then(p=>console.table(p))\""
+  },
+  "dependencies": {
+    "serialport": "^12.0.0"
+  }
+}
