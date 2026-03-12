@@ -10,3 +10,8 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 Broadcast::channel('kitchen.{userId}', function ($user, $userId) {
     return (int) $user->id === (int) $userId;
 });
+
+// Adisyon ekranı WebSocket kanalı — aynı kullanıcının tüm cihazları
+Broadcast::channel('adisyon.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});

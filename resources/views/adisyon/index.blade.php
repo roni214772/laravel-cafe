@@ -406,7 +406,7 @@
     /* 
        SCREEN 2  POS
      */
-    .pos{display:grid;grid-template-columns:1fr 380px;flex:1;overflow:hidden}
+    .pos{display:grid;grid-template-columns:1fr var(--panel-w,380px);flex:1;overflow:hidden}
 
     /*  Products panel  */
     .pane-mid{display:flex;flex-direction:column;background:var(--bg);border-right:1px solid var(--border);overflow:hidden}
@@ -421,7 +421,7 @@
     .ctab{padding:4px 12px;border-radius:999px;font-size:.72rem;font-weight:700;border:1px solid var(--border);background:transparent;color:var(--muted2);cursor:pointer;transition:all .14s;white-space:nowrap}
     .ctab:hover,.ctab.active{background:var(--primary);border-color:var(--primary);color:#fff}
     .prod-scroll{flex:1;overflow-y:auto;padding:10px}
-    .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:5px}
+    .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--card-w,128px),1fr));gap:5px}
     .pcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:9px 10px;cursor:pointer;transition:all .15s}
     .pcard:hover{border-color:var(--primary);background:var(--s2);transform:translateY(-1px)}
     .pcard:active{transform:scale(.97)}
@@ -620,7 +620,7 @@
     @keyframes rpulse{0%,100%{opacity:1}50%{opacity:.45}}
     /* Tablet - 641px..1024px */
     @media(min-width:641px) and (max-width:1024px){
-      .pos{grid-template-columns:1fr 320px}
+      .pos{grid-template-columns:1fr var(--panel-w,320px)}
     }
     /* Draft item */
     .oitem.is-draft{border-left:3px solid var(--orange);opacity:.82}
@@ -660,6 +660,7 @@
     .pos-tab .tab-count.visible{display:block}
     @media(max-width:640px){.pos-tabs{display:flex}.pos{position:relative}}
   </style>
+  @vite(['resources/js/app.js'])
 </head>
 <body>
 
@@ -923,6 +924,10 @@
 
     <!-- Mobil sekme bar -->
     <div class="pos-tabs">
+      <button class="pos-tab" onclick="goMasalar()">
+        <span class="tab-icon">🏠</span>
+        <span>Masalar</span>
+      </button>
       <button class="pos-tab active" data-tab="products" onclick="switchPosTab('products')">
         <span class="tab-icon">🍽️</span>
         <span>Ürünler</span>
@@ -1236,6 +1241,45 @@
 
     <hr class="theme-divider">
 
+    <!-- BOYUT AYARLARI -->
+    <div class="theme-section">
+      <div class="theme-section-label">📐 Boyut Ayarları</div>
+
+      <div style="margin-bottom:12px">
+        <label style="font-size:.75rem;font-weight:600;display:block;margin-bottom:4px">Ürün Kartları</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:.65rem;color:var(--muted2)">Küçük</span>
+          <input type="range" id="cardSizeSlider" min="80" max="220" value="128" oninput="setCardSize(this.value)" style="flex:1;accent-color:var(--primary);cursor:pointer">
+          <span style="font-size:.65rem;color:var(--muted2)">Büyük</span>
+          <span id="cardSizeLabel" style="font-size:.68rem;color:var(--muted2);min-width:28px;text-align:center">128</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px">
+        <label style="font-size:.75rem;font-weight:600;display:block;margin-bottom:4px">Adisyon Paneli Yazı</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:.65rem;color:var(--muted2)">Küçük</span>
+          <input type="range" id="panelSizeSlider" min="70" max="140" value="100" oninput="setPanelSize(this.value)" style="flex:1;accent-color:var(--primary);cursor:pointer">
+          <span style="font-size:.65rem;color:var(--muted2)">Büyük</span>
+          <span id="panelSizeLabel" style="font-size:.68rem;color:var(--muted2);min-width:28px;text-align:center">100</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px">
+        <label style="font-size:.75rem;font-weight:600;display:block;margin-bottom:4px">Adisyon Paneli Genişlik</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:.65rem;color:var(--muted2)">Dar</span>
+          <input type="range" id="panelWidthSlider" min="260" max="550" value="380" oninput="setPanelWidth(this.value)" style="flex:1;accent-color:var(--primary);cursor:pointer">
+          <span style="font-size:.65rem;color:var(--muted2)">Geniş</span>
+          <span id="panelWidthLabel" style="font-size:.68rem;color:var(--muted2);min-width:36px;text-align:center">380</span>
+        </div>
+      </div>
+
+      <button onclick="resetSizes()" style="padding:5px 14px;background:var(--s2);border:1px solid var(--border);border-radius:6px;font-size:.72rem;font-weight:600;color:var(--muted2);cursor:pointer">Standart Boyuta Dön</button>
+    </div>
+
+    <hr class="theme-divider">
+
     <!-- POS CİHAZ AYARLARI -->
     <div class="theme-section">
       <div class="theme-section-label">🏧 POS Cihaz Entegrasyonu</div>
@@ -1306,6 +1350,7 @@
 
 <script>
 const CSRF = '{{ csrf_token() }}';
+const USER_ID = {{ auth()->id() }};
 let selectedRoomId = null;
 let currentItems = [];
 let currentOrder = null;
@@ -1323,6 +1368,7 @@ async function api(url, method='GET', data=null) {
     headers: {'Accept':'application/json','X-CSRF-TOKEN':CSRF,...(data&&method!=='GET'?{'Content-Type':'application/json'}:{})},
     body: data && method !== 'GET' ? JSON.stringify(data) : undefined,
   });
+  if (r.status === 419) { window.location.reload(); return {error:'Oturum yenileniyor…'}; }
   const json = await r.json().catch(() => ({error: 'Sunucu hatası ('+ r.status +')'}));
   if (!r.ok && !json.error) json.error = 'HTTP ' + r.status;
   return json;
@@ -2716,6 +2762,98 @@ openSettings = function() {
 posCheckStatus();
 // 30 saniyede bir tekrar kontrol et
 setInterval(posCheckStatus, 30000);
+
+// ══ BOYUT AYARLARI ════════════════════════════════════════════════
+function setCardSize(v) {
+  v = parseInt(v);
+  const scale = v / 128;
+  document.documentElement.style.setProperty('--card-w', v + 'px');
+  document.querySelectorAll('.prod-grid .pcard h4').forEach(el => el.style.fontSize = (0.78 * scale).toFixed(2) + 'rem');
+  document.querySelectorAll('.prod-grid .pcard .pcat').forEach(el => el.style.fontSize = (0.62 * scale).toFixed(2) + 'rem');
+  document.querySelectorAll('.prod-grid .pcard .pprice').forEach(el => el.style.fontSize = (0.8 * scale).toFixed(2) + 'rem');
+  document.querySelectorAll('.prod-grid .pimg-wrap').forEach(el => el.style.height = Math.round(80 * scale) + 'px');
+  document.querySelectorAll('.prod-grid .pcard').forEach(el => el.style.padding = Math.round(9 * scale) + 'px ' + Math.round(10 * scale) + 'px');
+  const lbl = document.getElementById('cardSizeLabel');
+  if (lbl) lbl.textContent = v;
+  localStorage.setItem('cardSize', v);
+}
+
+function setPanelSize(v) {
+  v = parseInt(v);
+  const scale = v / 100;
+  const pane = document.querySelector('.pane-right');
+  if (pane) pane.style.fontSize = scale + 'rem';
+  document.querySelectorAll('.oitem-info strong').forEach(el => el.style.fontSize = (0.84 * scale).toFixed(2) + 'rem');
+  document.querySelectorAll('.oitem-info small').forEach(el => el.style.fontSize = (0.68 * scale).toFixed(2) + 'rem');
+  document.querySelectorAll('.total-row').forEach(el => el.style.fontSize = (0.74 * scale).toFixed(2) + 'rem');
+  document.querySelectorAll('.total-row.main').forEach(el => el.style.fontSize = (0.9 * scale).toFixed(2) + 'rem');
+  document.querySelectorAll('.payment-area label, .payment-area select, .payment-area input').forEach(el => el.style.fontSize = (0.74 * scale).toFixed(2) + 'rem');
+  document.querySelectorAll('.pbtn, .dbtn').forEach(el => el.style.fontSize = (0.72 * scale).toFixed(2) + 'rem');
+  const lbl = document.getElementById('panelSizeLabel');
+  if (lbl) lbl.textContent = v;
+  localStorage.setItem('panelSize', v);
+}
+
+function resetSizes() {
+  setCardSize(128);
+  setPanelSize(100);
+  setPanelWidth(380);
+  const cs = document.getElementById('cardSizeSlider');
+  const ps = document.getElementById('panelSizeSlider');
+  const pw = document.getElementById('panelWidthSlider');
+  if (cs) cs.value = 128;
+  if (ps) ps.value = 100;
+  if (pw) pw.value = 380;
+  localStorage.removeItem('cardSize');
+  localStorage.removeItem('panelSize');
+  localStorage.removeItem('panelWidth');
+}
+
+function setPanelWidth(v) {
+  v = parseInt(v);
+  document.documentElement.style.setProperty('--panel-w', v + 'px');
+  const lbl = document.getElementById('panelWidthLabel');
+  if (lbl) lbl.textContent = v;
+  localStorage.setItem('panelWidth', v);
+}
+
+// Sayfa yüklenirken kaydedilen boyutları uygula
+(function(){
+  const cs = localStorage.getItem('cardSize');
+  const ps = localStorage.getItem('panelSize');
+  const pw = localStorage.getItem('panelWidth');
+  if (cs) { setCardSize(cs); const s = document.getElementById('cardSizeSlider'); if (s) s.value = cs; }
+  if (ps) { setPanelSize(ps); const s = document.getElementById('panelSizeSlider'); if (s) s.value = ps; }
+  if (pw) { setPanelWidth(pw); const s = document.getElementById('panelWidthSlider'); if (s) s.value = pw; }
+})();
+
+// ══ CANLI SENKRONİZASYON (WebSocket) ════════════════════════════════
+// Telefondan yapılan işlemler anlık bilgisayarda görünsün (ve tersi)
+(function initAdisyonSync() {
+  // Echo vite build ile yüklenecek, biraz gecikebilir
+  let attempts = 0;
+  const tryConnect = setInterval(() => {
+    attempts++;
+    if (window.Echo) {
+      clearInterval(tryConnect);
+      window.Echo.private('adisyon.' + USER_ID)
+        .listen('.updated', (e) => {
+          // Masa kartını güncelle (liste ekranı)
+          if (e.payload && e.payload.room) {
+            updateTableCard(e.payload.room);
+          }
+          // Eğer o an aynı masada açıksak siparişi yenile
+          if (selectedRoomId && e.room_id === selectedRoomId) {
+            api('/adisyon/masa/' + selectedRoomId + '/data').then(d => {
+              if (d && d.room) renderOrder(d);
+            });
+          }
+        });
+      console.log('[Adisyon] WebSocket bağlantısı kuruldu');
+    }
+    if (attempts > 50) clearInterval(tryConnect); // 5sn sonra vazgeç
+  }, 100);
+})();
 
 </script>
 <script>

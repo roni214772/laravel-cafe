@@ -447,6 +447,7 @@ function wireButtons(root = document) {
           headers: {'Content-Type':'application/json','X-CSRF-TOKEN':CSRF},
           body: JSON.stringify({table_id: btn.dataset.orderId})
         });
+        if (r.status === 419) { window.location.reload(); return; }
         // WebSocket varsa broadcast zaten günceller, poll’a gerek yok
         if (r.ok && !window.Echo) await poll();
         else if (!r.ok) { btn.disabled = false; btn.classList.remove('loading'); }

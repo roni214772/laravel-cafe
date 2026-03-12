@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AdisyonUpdated;
 use App\Events\KitchenUpdated;
 use App\Models\OrderItem;
 use App\Models\Payment;
@@ -84,6 +85,7 @@ class AdisyonController extends Controller
         }
 
         $this->recalcOrder($order);
+        $this->broadcastAdisyon($room, 'item_added');
         return $this->masaData($room);
     }
 
@@ -99,6 +101,7 @@ class AdisyonController extends Controller
                 ->delete();
             $this->recalcOrder($order);
         }
+        $this->broadcastAdisyon($room, 'item_removed');
         return $this->masaData($room);
     }
 
@@ -122,6 +125,7 @@ class AdisyonController extends Controller
                 $this->recalcOrder($order);
             }
         }
+        $this->broadcastAdisyon($room, 'qty_updated');
         return $this->masaData($room);
     }
 
@@ -134,6 +138,7 @@ class AdisyonController extends Controller
             OrderItem::where('pos_order_id', $order->id)->delete();
             $this->recalcOrder($order);
         }
+        $this->broadcastAdisyon($room, 'order_cleared');
         return $this->masaData($room);
     }
 
@@ -202,6 +207,7 @@ class AdisyonController extends Controller
             $order->update($orderData);
             $room->update(['status' => 'closed', 'closed_at' => now()]);
 
+            $this->broadcastAdisyon($room, 'payment_closed');
             return response()->json([
                 'success'  => true,
                 'closed'   => true,
@@ -213,6 +219,7 @@ class AdisyonController extends Controller
         } else {
             $order->update($orderData);
 
+            $this->broadcastAdisyon($room, 'payment_partial');
             return response()->json([
                 'success'    => true,
                 'closed'     => false,
@@ -313,6 +320,7 @@ class AdisyonController extends Controller
         } else {
             $room->update(['status' => 'open', 'opened_at' => now()]);
         }
+        $this->broadcastAdisyon($room, 'room_toggled');
         return response()->json(['success' => true, 'room' => $this->roomArray($room)]);
     }
 
@@ -450,6 +458,20 @@ class AdisyonController extends Controller
     }
 
     // ─── Helpers ────────────────────────────────────────────────────
+    private function broadcastAdisyon(Room $room, string $action): void
+    {
+        try {
+            broadcast(new AdisyonUpdated(
+                $room->user_id,
+                $room->id,
+                $action,
+                ['room' => $this->roomArray($room->fresh())]
+            ))->toOthers();
+        } catch (\Throwable $e) {
+            // Reverb sunucusu kapalıysa ana işlemi engelleme
+        }
+    }
+
     private function authorizeRoom(Room $room): void
     {
         if ($room->user_id !== auth()->id()) {
