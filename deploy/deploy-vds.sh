@@ -25,15 +25,13 @@ apt update && apt upgrade -y
 # ── 2. Gerekli Paketler ──────────────────────────────────────
 echo "[2/9] PHP, Nginx, MySQL, Node.js kuruluyor..."
 apt install -y software-properties-common
-# Ubuntu 25.10 zaten PHP 8.3+ içerir, PPA eklemeye gerek olmayabilir
-add-apt-repository -y ppa:ondrej/php 2>/dev/null || echo "PPA eklenemedi, sistem PHP kullanılacak"
 apt update
 apt install -y \
     nginx \
     mysql-server \
-    php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml \
-    php8.3-curl php8.3-zip php8.3-gd php8.3-intl php8.3-bcmath \
-    php8.3-readline php8.3-tokenizer \
+    php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml \
+    php8.4-curl php8.4-zip php8.4-gd php8.4-intl php8.4-bcmath \
+    php8.4-readline php8.4-tokenizer \
     supervisor \
     git unzip curl
 
