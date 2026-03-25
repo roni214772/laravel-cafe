@@ -13,7 +13,7 @@ class ActivateAllUsers extends Command
     public function handle(): int
     {
         $count = User::where('subscription_status', 'none')
-            ->where('email', '!=', 'bruskefrin47@gmail.com')
+            ->where('email', '!=', config('app.admin_email'))
             ->update([
                 'subscription_status'      => 'active',
                 'subscription_type'        => 'monthly',

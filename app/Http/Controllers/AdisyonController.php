@@ -16,10 +16,15 @@ class AdisyonController extends Controller
     // ─── Main Page ──────────────────────────────────────────────────
     public function index()
     {
-        $rooms      = Room::where('user_id', auth()->id())->orderBy('id')->get();
-        $products   = Product::where('user_id', auth()->id())->orderBy('name')->get()->groupBy('category');
+        $ownerId    = auth()->user()->effectiveOwnerId();
+        $rooms      = Room::where('user_id', $ownerId)->orderBy('id')->get();
+        $products   = Product::where('user_id', $ownerId)->orderBy('name')->get()->groupBy('category');
         $uiSettings = json_decode(auth()->user()->ui_settings ?? '{}', true) ?: [];
-        return view('adisyon.index', compact('rooms', 'products', 'uiSettings'));
+        $userRole   = auth()->user()->role;
+        return response()
+            ->view('adisyon.index', compact('rooms', 'products', 'uiSettings', 'userRole'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+            ->header('Pragma', 'no-cache');
     }
 
     // ─── Get room order data (AJAX) ─────────────────────────────────
@@ -58,7 +63,9 @@ class AdisyonController extends Controller
             'adet'       => 'nullable|integer|min:1',
         ]);
 
-        $product = Product::findOrFail($request->product_id);
+        $product = Product::where('id', $request->product_id)
+            ->where('user_id', auth()->user()->effectiveOwnerId())
+            ->firstOrFail();
         $adet    = (int) ($request->adet ?? 1);
         $order   = $this->getOrCreateOrder($room);
 
@@ -243,12 +250,17 @@ class AdisyonController extends Controller
             ->where('kitchen_status', 'draft')
             ->update(['kitchen_status' => 'pending']);
 
+        // Masa kapalıysa aç (mutfak ekranı sadece açık masaları gösterir)
+        if ($room->status !== 'open') {
+            $room->update(['status' => 'open', 'opened_at' => now()]);
+        }
+
         // WebSocket: mutfak ekranını anlık güncelle (Reverb çalışmıyorsa sessizce atla)
         if ($count > 0) {
             try {
                 $mutfak = app(MutfakController::class);
                 broadcast(new KitchenUpdated(
-                    auth()->id(),
+                    auth()->user()->effectiveOwnerId(),
                     $mutfak->getOrdersPublic()
                 ))->toOthers();
             } catch (\Throwable $e) {
@@ -272,7 +284,7 @@ class AdisyonController extends Controller
         if (!$sourceOrder) {
             return response()->json(['error' => 'Aktif sipariş bulunamadı'], 404);
         }
-        $targetRoom = Room::where('id', $targetRoomId)->where('user_id', auth()->id())->firstOrFail();
+        $targetRoom = Room::where('id', $targetRoomId)->where('user_id', auth()->user()->effectiveOwnerId())->firstOrFail();
         $targetOrder = $this->getOrCreateOrder($targetRoom);
         // Move all items
         OrderItem::where('pos_order_id', $sourceOrder->id)->update(['pos_order_id' => $targetOrder->id]);
@@ -290,7 +302,7 @@ class AdisyonController extends Controller
     public function masaOlustur(Request $request)
     {
         $request->validate(['name' => 'required|string|max:50']);
-        $room = Room::create(['user_id' => auth()->id(), 'name' => $request->name, 'status' => 'closed']);
+        $room = Room::create(['user_id' => auth()->user()->effectiveOwnerId(), 'name' => $request->name, 'status' => 'closed']);
         return response()->json(['success' => true, 'room' => $this->roomArray($room)]);
     }
 
@@ -344,6 +356,42 @@ class AdisyonController extends Controller
         ]);
     }
 
+    // ─── Bulk ready check for ALL rooms (single request instead of N) ──
+    public function readyCheckAll()
+    {
+        $ownerId = auth()->user()->effectiveOwnerId();
+        $rooms   = Room::where('user_id', $ownerId)->get();
+        $roomIds = $rooms->pluck('id');
+
+        // Get all open orders for these rooms in one query
+        $openOrders = PosOrder::whereIn('room_id', $roomIds)
+            ->where('status', 'open')
+            ->get()
+            ->keyBy('room_id');
+
+        // Get all ready items for these orders in one query
+        $orderIds = $openOrders->pluck('id');
+        $readyItems = $orderIds->isNotEmpty()
+            ? OrderItem::whereIn('pos_order_id', $orderIds)
+                ->where('kitchen_status', 'ready')
+                ->get()
+                ->groupBy('pos_order_id')
+            : collect();
+
+        $result = [];
+        foreach ($rooms as $room) {
+            $order = $openOrders->get($room->id);
+            $items = $order ? ($readyItems->get($order->id) ?? collect()) : collect();
+            $result[] = [
+                'room_id'     => $room->id,
+                'room_name'   => $room->name,
+                'ready_items' => $items->map(fn($i) => $this->itemArray($i))->values(),
+            ];
+        }
+
+        return response()->json(['rooms' => $result]);
+    }
+
     // ─── Mark notified (Tamam clicked) ───────────────────────────────
     public function markNotified(Request $request, Room $room)
     {        $this->authorizeRoom($room);        $ids = $request->input('item_ids', []);
@@ -362,7 +410,7 @@ class AdisyonController extends Controller
         $start = \Carbon\Carbon::parse($date)->startOfDay();
         $end   = \Carbon\Carbon::parse($date)->endOfDay();
 
-        $myRoomIds = Room::where('user_id', auth()->id())->pluck('id');
+        $myRoomIds = Room::where('user_id', auth()->user()->effectiveOwnerId())->pluck('id');
         $orders = PosOrder::where('status', 'closed')
             ->whereIn('room_id', $myRoomIds)
             ->whereBetween('closed_at', [$start, $end])
@@ -409,7 +457,7 @@ class AdisyonController extends Controller
         $start = \Carbon\Carbon::parse($date)->startOfDay();
         $end   = \Carbon\Carbon::parse($date)->endOfDay();
 
-        $myRoomIds = Room::where('user_id', auth()->id())->pluck('id');
+        $myRoomIds = Room::where('user_id', auth()->user()->effectiveOwnerId())->pluck('id');
         $orders = PosOrder::where('status', 'closed')
             ->whereIn('room_id', $myRoomIds)
             ->whereBetween('closed_at', [$start, $end])
@@ -449,7 +497,7 @@ class AdisyonController extends Controller
     public function deleteOrder(PosOrder $order)
     {        // Güvenlik: sadece kendi masalarına ait siparişler silinebilir
         $room = Room::find($order->room_id);
-        if (!$room || $room->user_id !== auth()->id()) {
+        if (!$room || $room->user_id !== auth()->user()->effectiveOwnerId()) {
             abort(403);
         }        OrderItem::where('pos_order_id', $order->id)->delete();
         Payment::where('pos_order_id', $order->id)->delete();
@@ -458,14 +506,14 @@ class AdisyonController extends Controller
     }
 
     // ─── Helpers ────────────────────────────────────────────────────
-    private function broadcastAdisyon(Room $room, string $action): void
+    private function broadcastAdisyon(Room $room, string $action, array $extraPayload = []): void
     {
         try {
             broadcast(new AdisyonUpdated(
                 $room->user_id,
                 $room->id,
                 $action,
-                ['room' => $this->roomArray($room->fresh())]
+                $extraPayload
             ))->toOthers();
         } catch (\Throwable $e) {
             // Reverb sunucusu kapalıysa ana işlemi engelleme
@@ -474,7 +522,7 @@ class AdisyonController extends Controller
 
     private function authorizeRoom(Room $room): void
     {
-        if ($room->user_id !== auth()->id()) {
+        if ($room->user_id !== auth()->user()->effectiveOwnerId()) {
             abort(403);
         }
     }
@@ -492,6 +540,9 @@ class AdisyonController extends Controller
                 'paid'      => 0,
                 'due'       => 0,
             ]);
+        }
+        // Masa kapalıysa otomatik aç
+        if ($room->status !== 'open') {
             $room->update(['status' => 'open', 'opened_at' => now()]);
         }
         return $order;
@@ -503,12 +554,22 @@ class AdisyonController extends Controller
         $order->update(['subtotal' => $subtotal, 'total' => $subtotal]);
     }
 
-    private function roomArray(Room $room): array
+    private function roomArray(Room $room, ?PosOrder $cachedOrder = null): array
     {
-        $order     = PosOrder::where('room_id', $room->id)->where('status', 'open')->first();
-        $itemCount = $order ? OrderItem::where('pos_order_id', $order->id)->count() : 0;
-        $total     = $order ? OrderItem::where('pos_order_id', $order->id)->sum('total') : 0;
-        $hasReady  = $order ? OrderItem::where('pos_order_id', $order->id)->where('kitchen_status', 'ready')->exists() : false;
+        $order = $cachedOrder ?? PosOrder::where('room_id', $room->id)->where('status', 'open')->first();
+        if ($order) {
+            // Single query instead of 3 separate ones
+            $stats = OrderItem::where('pos_order_id', $order->id)
+                ->selectRaw("COUNT(*) as item_count, COALESCE(SUM(total),0) as total_sum, SUM(CASE WHEN kitchen_status = 'ready' THEN 1 ELSE 0 END) as ready_count")
+                ->first();
+            $itemCount = (int) $stats->item_count;
+            $total     = (float) $stats->total_sum;
+            $hasReady  = $stats->ready_count > 0;
+        } else {
+            $itemCount = 0;
+            $total     = 0;
+            $hasReady  = false;
+        }
         return [
             'id'         => $room->id,
             'name'       => $room->name,
@@ -516,7 +577,7 @@ class AdisyonController extends Controller
             'note'       => $room->note ?? '',
             'opened_at'  => $room->opened_at?->format('d.m.Y H:i:s'),
             'item_count' => $itemCount,
-            'total'      => (float) $total,
+            'total'      => $total,
             'has_ready'  => $hasReady,
             'order_id'   => $order?->id,
         ];
@@ -550,7 +611,7 @@ class AdisyonController extends Controller
             'price'          => (float) $item->price,
             'quantity'       => (float) $item->quantity,
             'total'          => (float) $item->total,
-            'kitchen_status' => $item->kitchen_status,
+            'kitchen_status' => ($item->kitchen_status === null || $item->kitchen_status === '' ? 'draft' : $item->kitchen_status),
             'note'           => $item->note ?? '',
         ];
     }

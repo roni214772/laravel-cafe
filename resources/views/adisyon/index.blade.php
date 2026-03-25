@@ -104,7 +104,6 @@
     }
     .tb-user{
       font-size:.72rem;font-weight:600;color:var(--muted2);
-      max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
       padding:0 4px;
     }
     .tb-logout{color:var(--muted2) !important;}
@@ -690,18 +689,23 @@
   </div>
   <div class="topbar-spacer"></div>
   <div class="topbar-right">
+    
     <a href="/mutfak" target="_blank" class="tb-btn mob-hide">Mutfak</a>
     <button class="tb-btn primary" id="btnAddTable" onclick="showModal('addTable')">+ Masa</button>
     <div class="topbar-div mob-hide"></div>
+    @if(($userRole ?? 'owner') === 'owner')
     <button class="tb-btn mob-hide" onclick="openUrunler()">Ürünler</button>
     <button class="tb-btn mob-hide" onclick="openRapor()">Rapor</button>
     <button class="tb-btn mob-hide" onclick="openGecmis()">Geçmiş</button>
     <div class="topbar-div mob-hide"></div>
     <button class="tb-btn mob-hide" onclick="openSettings()" title="Ayarlar">&#9881;</button>
     <button class="tb-btn mob-hide" onclick="openQr()" title="QR Menü">QR</button>
+    <button class="tb-btn mob-hide" onclick="openGarsonlar()" title="Garsonlar">👤 Garsonlar</button>
     <div class="topbar-div mob-hide"></div>
-    <span class="tb-user mob-hide">{{ auth()->user()->name }}</span>
     <a href="{{ route('subscription.select') }}" class="tb-btn mob-hide" title="Aboneliğini yönet / Uzat">💳 Abonelik</a>
+    @else
+    <div class="topbar-div mob-hide"></div>
+    @endif
     <form method="POST" action="{{ route('logout') }}" class="mob-hide" style="display:inline">
       @csrf
       <button type="submit" class="tb-btn tb-logout" title="Çıkış Yap">↪ Çıkış</button>
@@ -711,12 +715,15 @@
       <button class="tb-btn" onclick="toggleMobMenu(event)" title="Menü" id="btnMobMenu">&#8942;</button>
       <div class="mob-dropdown" id="mobDropdown">
         <a href="/mutfak" target="_blank" class="mob-dd-item"><span class="mob-dd-icon">🍳</span>Mutfak</a>
+        @if(($userRole ?? 'owner') === 'owner')
         <button class="mob-dd-item" onclick="closeMobMenu();openUrunler()"><span class="mob-dd-icon">🛒</span>Ürünler</button>
         <button class="mob-dd-item" onclick="closeMobMenu();openRapor()"><span class="mob-dd-icon">📊</span>Rapor</button>
         <button class="mob-dd-item" onclick="closeMobMenu();openGecmis()"><span class="mob-dd-icon">📝</span>Geçmiş</button>
         <button class="mob-dd-item" onclick="closeMobMenu();openQr()"><span class="mob-dd-icon">📱</span>QR Menü</button>
         <button class="mob-dd-item" onclick="closeMobMenu();openSettings()"><span class="mob-dd-icon">⚙️</span>Ayarlar</button>
+        <button class="mob-dd-item" onclick="closeMobMenu();openGarsonlar()"><span class="mob-dd-icon">👤</span>Garsonlar</button>
         <a href="{{ route('subscription.select') }}" class="mob-dd-item"><span class="mob-dd-icon">💳</span>Aboneliği Uzat</a>
+        @endif
         <div style="border-top:1px solid var(--border);margin:4px 0"></div>
         <button class="mob-dd-item" onclick="document.getElementById('mobLogoutForm').submit()"><span class="mob-dd-icon">↪</span>Çıkış Yap</button>
       </div>
@@ -787,8 +794,10 @@
                   <div class="tcard-item-row">
                     <span class="tcard-item-count">{{ $itemCount }} ürün</span>
                   </div>
+                  @if(($userRole ?? 'owner') === 'owner')
                   <div class="tcard-amount">{{ number_format($total, 2) }} ₺</div>
                   <div class="tcard-amount-label">Güncel tutar</div>
+                  @endif
                   @if($hasReady)
                     <div class="tcard-ready-badge">⚡ Mutfaktan hazır</div>
                   @endif
@@ -821,7 +830,7 @@
           <span class="sico"></span>
           <input type="text" id="prodSearch" placeholder="Ara..." oninput="filterProds()">
         </div>
-        <button class="tool-btn" onclick="openUrunler()">+ Ürün</button>
+        <button class="tool-btn" onclick="openUrunler()" @if(($userRole ?? 'owner') !== 'owner') style="display:none" @endif>+ Ürün</button>
       </div>
       <div class="cat-tabs" id="catTabs">
         <button class="ctab active" data-cat="all" onclick="filterCat('all',this)">Tümü</button>
@@ -854,7 +863,9 @@
                     </div>
                     <h4>{{ $urun->name }}</h4>
                     <div class="pcat">{{ $urun->category ?: 'Genel' }}</div>
+                    @if(($userRole ?? 'owner') === 'owner')
                     <div class="pprice">{{ number_format($urun->price, 2) }} ₺</div>
+                    @endif
                   </div>
                 @endforeach
               @endforeach
@@ -889,6 +900,7 @@
         </div>
       </div>
       <div class="payment-area" id="paymentArea" style="display:none">
+        @if(($userRole ?? 'owner') === 'owner')
         <div class="payment-row">
           <div class="prow-group">
             <label>Ödeme Tipi</label>
@@ -903,12 +915,16 @@
             <input id="alinanTutar" type="number" class="form-control" placeholder="Opsiyonel" min="0" step="0.01">
           </div>
         </div>
+        @endif
         <textarea id="orderNote" class="form-control" rows="2" placeholder="Sipariş notu..." style="resize:none;font-size:.74rem;margin-bottom:6px" oninput="debounceSaveNote()"></textarea>
         <div class="payment-btns">
+          @if(($userRole ?? 'owner') === 'owner')
           <button class="pbtn primary" onclick="odemeAl()"> Ödeme Al</button>
+          @endif
           <button class="pbtn fire" id="btnFire" onclick="fireTokitchen()" disabled>🍳 Mutfağa Gönder</button>
           <button class="pbtn secondary" onclick="goMasalar()">◄ Masalar</button>
         </div>
+        @if(($userRole ?? 'owner') === 'owner')
         <div class="payment-btns" style="margin-top:4px">
           <button class="pbtn secondary" id="btnPosDevice" onclick="posOdemeGonder()" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none">🏧 POS Cihazına Gönder</button>
           <button class="pbtn secondary" onclick="hesabiBol()">Hesabı Böl</button>
@@ -919,6 +935,7 @@
           <button class="dbtn warn" onclick="adisyonuTemizle()"> Temizle</button>
           <button class="dbtn danger" onclick="masayiSil()"> Masayı Sil</button>
         </div>
+        @endif
       </div>
     </div>
 
@@ -1346,11 +1363,49 @@
     </div>
   </div>
 </div>
+
+<!-- Garson Yönetimi Modal -->
+@if(($userRole ?? 'owner') === 'owner')
+<div class="modal-bg" id="modal-garsonlar">
+  <div class="modal" style="width:420px;max-height:85vh;overflow-y:auto">
+    <h3>👤 Garson Yönetimi</h3>
+    <p style="font-size:.75rem;color:var(--muted2);margin-bottom:14px">
+      Garsonlar aynı adisyon ekranını görür ama ödeme alamaz, fiyat göremez, ürün/rapor yönetemez.
+    </p>
+
+    <div style="margin-bottom:14px;padding:12px;background:var(--s3);border-radius:8px;border:1px solid var(--border)">
+      <div style="font-size:.72rem;font-weight:700;margin-bottom:8px">+ Yeni Garson Ekle</div>
+      <div class="fg" style="margin-bottom:6px">
+        <input id="garsonAdi" type="text" class="form-control" placeholder="Ad Soyad" style="font-size:.78rem">
+      </div>
+      <div class="fg" style="margin-bottom:6px">
+        <input id="garsonEmail" type="email" class="form-control" placeholder="E-posta" style="font-size:.78rem">
+      </div>
+      <div class="fg" style="margin-bottom:8px">
+        <input id="garsonSifre" type="password" class="form-control" placeholder="Şifre (min 6 karakter)" style="font-size:.78rem">
+      </div>
+      <button class="btn-ok" onclick="addGarson()" style="width:100%;font-size:.75rem;padding:7px">Garson Ekle</button>
+    </div>
+
+    <div style="font-size:.72rem;font-weight:700;margin-bottom:8px">Mevcut Garsonlar</div>
+    <div id="garsonlarList" style="max-height:260px;overflow-y:auto">
+      <div style="text-align:center;padding:20px;color:var(--muted2);font-size:.75rem">Yükleniyor...</div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="btn-cancel" onclick="closeModal('garsonlar')">Kapat</button>
+    </div>
+  </div>
+</div>
+@endif
+
 <div class="toast" id="toast"></div>
 
 <script>
 const CSRF = '{{ csrf_token() }}';
 const USER_ID = {{ auth()->id() }};
+const USER_ROLE = '{{ $userRole ?? "owner" }}';
+const IS_WAITER = USER_ROLE === 'waiter';
 let selectedRoomId = null;
 let currentItems = [];
 let currentOrder = null;
@@ -1398,20 +1453,21 @@ document.addEventListener('DOMContentLoaded', () => {
 // ─── Kitchen polling ───────────────────────────────────────────
 // ─── Tüm masaları dinle ───────────────────────────────────────────
 async function pollAllRooms() {
-  const cards = document.querySelectorAll('.tcard[data-id]');
-  for (const card of cards) {
-    const id = card.dataset.id;
-    try {
-      const d = await api(`/adisyon/masa/${id}/ready-check`);
-      const allReady = d.ready_items || [];
+  try {
+    const d = await api('/adisyon/ready-check-all');
+    if (!d.rooms) return;
+    for (const roomData of d.rooms) {
+      const card = document.querySelector(`.tcard[data-id="${roomData.room_id}"]`);
+      if (!card) continue;
+      const allReady = roomData.ready_items || [];
       card.classList.toggle('has-ready', allReady.length > 0);
       const newItems = allReady.filter(i => !seenReadyIds.has(i.id));
       if (newItems.length) {
         newItems.forEach(i => seenReadyIds.add(i.id));
-        notifQueue.push({ roomId: parseInt(id), roomName: d.room_name, items: newItems });
+        notifQueue.push({ roomId: roomData.room_id, roomName: roomData.room_name, items: newItems });
       }
-    } catch(e) {}
-  }
+    }
+  } catch(e) {}
   if (!notifShowing) showNextNotif();
 }
 function showNextNotif() {
@@ -1443,7 +1499,7 @@ async function closeNotif() {
 }
 function startKitchenPoll() {
   stopKitchenPoll();
-  pollInterval = setInterval(pollAllRooms, 5000);
+  pollInterval = setInterval(pollAllRooms, 6000);
 }
 function stopKitchenPoll() {
   if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
@@ -1487,6 +1543,9 @@ async function openMasa(id, el) {
 
 //  Render order 
 function renderOrder(data) {
+    // DEBUG: kitchen_status değerlerini konsola yaz
+    console.log('currentItems:', currentItems);
+    currentItems.forEach(i => console.log('item:', i.name, 'kitchen_status:', i.kitchen_status));
   currentOrder = data.order;
   currentItems = data.items || [];
   const room = data.room;
@@ -1507,7 +1566,7 @@ function renderOrder(data) {
       <div class="oitem" data-item-id="${item.id}">
         <div class="oitem-info">
           <strong>${esc(item.name)}</strong>
-          <small>${esc(item.category)} &nbsp;${fmt(item.price)} ₺</small>
+          <small>${esc(item.category)}${IS_WAITER ? '' : ' &nbsp;'+fmt(item.price)+' ₺'}</small>
           ${noteLine}
         </div>
         <div class="qty-ctrl">
@@ -1522,10 +1581,16 @@ function renderOrder(data) {
   }
 
   const sub = currentItems.reduce((s,i)=>s+i.total,0);
-  const kdvP  = parseFloat(document.getElementById('kdv').value)||0;
-  const serP  = parseFloat(document.getElementById('servis').value)||0;
-  const indT  = document.getElementById('indirimTipi').value;
-  const indV  = parseFloat(document.getElementById('indirimDeger').value)||0;
+  const kdvInput = document.getElementById('kdv');
+  const servisInput = document.getElementById('servis');
+  const indirimTipiInput = document.getElementById('indirimTipi');
+  const indirimDegerInput = document.getElementById('indirimDeger');
+  const alinanTutarInput = document.getElementById('alinanTutar');
+
+  const kdvP  = kdvInput ? parseFloat(kdvInput.value) : 0;
+  const serP  = servisInput ? parseFloat(servisInput.value) : 0;
+  const indT  = indirimTipiInput ? indirimTipiInput.value : 'Yok';
+  const indV  = indirimDegerInput ? parseFloat(indirimDegerInput.value) : 0;
   let indirim = 0;
   if(indT==='Tutar') indirim=indV;
   if(indT==='Yuzde') indirim=sub*indV/100;
@@ -1533,43 +1598,66 @@ function renderOrder(data) {
   const kdvAmt = (sub+serAmt-indirim)*kdvP/100;
   const total  = sub+serAmt-indirim+kdvAmt;
 
-  document.getElementById('orderTotals').style.display = 'block';
+  const orderTotals = document.getElementById('orderTotals');
+  if(orderTotals) orderTotals.style.display = IS_WAITER ? 'none' : 'block';
   // Mobilde varsayılan kapalı
   if(window.innerWidth <= 640){
-    document.getElementById('orderTotals').classList.add('collapsed');
+    if(orderTotals) orderTotals.classList.add('collapsed');
   } else {
-    document.getElementById('orderTotals').classList.remove('collapsed');
+    if(orderTotals) orderTotals.classList.remove('collapsed');
   }
-  document.getElementById('paymentArea').style.display  = 'flex';
-  document.getElementById('araToplam').textContent  = fmt(sub)+' ₺';
-  document.getElementById('servisLabel').textContent = serP>0?`Servis (${serP}%)`:'Servis';
-  document.getElementById('servisAmt').textContent  = fmt(serAmt)+' ₺';
-  document.getElementById('indirimAmt').textContent = '- '+fmt(indirim)+' ₺';
-  document.getElementById('kdvLabel').textContent   = kdvP>0?`KDV (${kdvP}%)`:'KDV';
-  document.getElementById('kdvAmt').textContent     = fmt(kdvAmt)+' ₺';
-  document.getElementById('genelToplam').textContent= fmt(total)+' ₺';
+  const paymentArea = document.getElementById('paymentArea');
+  if(paymentArea) paymentArea.style.display  = 'flex';
+  const araToplam = document.getElementById('araToplam');
+  if(araToplam) araToplam.textContent  = fmt(sub)+' ₺';
+  const servisLabel = document.getElementById('servisLabel');
+  if(servisLabel) servisLabel.textContent = serP>0?`Servis (${serP}%)`:'Servis';
+  const servisAmt = document.getElementById('servisAmt');
+  if(servisAmt) servisAmt.textContent  = fmt(serAmt)+' ₺';
+  const indirimAmt = document.getElementById('indirimAmt');
+  if(indirimAmt) indirimAmt.textContent = '- '+fmt(indirim)+' ₺';
+  const kdvLabel = document.getElementById('kdvLabel');
+  if(kdvLabel) kdvLabel.textContent   = kdvP>0?`KDV (${kdvP}%)`:'KDV';
+  const kdvAmtEl = document.getElementById('kdvAmt');
+  if(kdvAmtEl) kdvAmtEl.textContent     = fmt(kdvAmt)+' ₺';
+  const genelToplam = document.getElementById('genelToplam');
+  if(genelToplam) genelToplam.textContent= fmt(total)+' ₺';
   const lbl = document.getElementById('totalToggleLabel');
   if(lbl) lbl.textContent = 'Toplam: ' + fmt(total) + ' ₺';
-  const paid = parseFloat(document.getElementById('alinanTutar').value)||0;
+  const paid = alinanTutarInput ? parseFloat(alinanTutarInput.value) : 0;
   // Daha önce ödenen tutar (order'dan)
   const prevPaid = currentOrder ? (parseFloat(currentOrder.paid)||0) : 0;
   const effectiveNewPay = paid > 0 ? paid : (total - prevPaid);
   const totalPaidSoFar = prevPaid + (paid > 0 ? paid : 0);
   const displayPaid = paid > 0 ? totalPaidSoFar : total;
   const displayDue  = Math.max(0, total - displayPaid);
-  document.getElementById('odenenAmt').textContent  = fmt(prevPaid > 0 ? totalPaidSoFar : (paid > 0 ? paid : total))+' ₺';
-  document.getElementById('kalanAmt').textContent   = fmt(displayDue)+' ₺';
-  // Kalan > 0 ise kırmızı göster
-  document.getElementById('kalanAmt').style.color = displayDue > 0 ? 'var(--red)' : 'var(--green)';
+  const odenenAmt = document.getElementById('odenenAmt');
+  if(odenenAmt) odenenAmt.textContent  = fmt(prevPaid > 0 ? totalPaidSoFar : (paid > 0 ? paid : total))+' ₺';
+  const kalanAmt = document.getElementById('kalanAmt');
+  if(kalanAmt) {
+    kalanAmt.textContent   = fmt(displayDue)+' ₺';
+    // Kalan > 0 ise kırmızı göster
+    kalanAmt.style.color = displayDue > 0 ? 'var(--red)' : 'var(--green)';
+  }
 
   if(room) updateTableCard(room);
-  document.getElementById('orderNote').value = data.order?.note || '';
-  // Fire button
-  const draftCount = currentItems.filter(i => i.kitchen_status === 'draft').length;
+  const orderNote = document.getElementById('orderNote');
+  if(orderNote) orderNote.value = data.order?.note || '';
+  // Fire button (case-insensitive, null/boş güvenli)
+  // Garsonlar için: ürün varsa buton aktif olsun, kitchen_status ne olursa olsun
+  const draftCount = currentItems.filter(i => {
+    if (!i.kitchen_status || String(i.kitchen_status).trim() === '') return true;
+    return String(i.kitchen_status).toLowerCase() === 'draft';
+  }).length;
   const btnFire = document.getElementById('btnFire');
   if(btnFire){
-    btnFire.disabled = draftCount === 0;
-    btnFire.innerHTML = draftCount > 0 ? `🍳 Mutfağa Gönder (${draftCount})` : '🍳 Mutfağa Gönder';
+    if (IS_WAITER) {
+      btnFire.disabled = draftCount === 0;
+      btnFire.innerHTML = draftCount > 0 ? `🍳 Mutfağa Gönder (${draftCount})` : '🍳 Mutfağa Gönder';
+    } else {
+      btnFire.disabled = draftCount === 0;
+      btnFire.innerHTML = draftCount > 0 ? `🍳 Mutfağa Gönder (${draftCount})` : '🍳 Mutfağa Gönder';
+    }
   }
   // Mobil adisyon sekmesi badge güncelle
   const cnt = currentItems.reduce((s,i) => s + i.quantity, 0);
@@ -1743,8 +1831,7 @@ function updateTableCard(room){
     if(room.item_count>0){
       info.innerHTML=
         '<div class="tcard-item-row"><span class="tcard-item-count">'+room.item_count+' ürün</span></div>'+
-        '<div class="tcard-amount">'+fmt(room.total)+' ₺</div>'+
-        '<div class="tcard-amount-label">Güncel tutar</div>'+
+        (IS_WAITER ? '' : '<div class="tcard-amount">'+fmt(room.total)+' ₺</div><div class="tcard-amount-label">Güncel tutar</div>')+
         (room.has_ready?'<div class="tcard-ready-badge">⚡ Mutfaktan hazır</div>':'');
     } else {
       info.innerHTML='<div class="tcard-empty-label">Sipariş yok</div>';
@@ -1867,7 +1954,18 @@ function printFis(){
     return l + (space>0?' '.repeat(space):' ') + r;
   };
   let items_html = '';
+  // Aynı ürünleri birleştir (isim + fiyat bazında grupla)
+  const grouped = [];
   currentItems.forEach(i => {
+    const found = grouped.find(g => g.name === i.name && g.price === i.price);
+    if (found) {
+      found.quantity += i.quantity;
+      found.total += i.total;
+    } else {
+      grouped.push({ name: i.name, price: i.price, quantity: i.quantity, total: i.total });
+    }
+  });
+  grouped.forEach(i => {
     const qty_price = `${i.quantity} x ${fmt(i.price)}`;
     const total_str = `${fmt(i.total)} ₺`;
     items_html += `<div class="item-name">${i.name}</div>`;
@@ -2838,14 +2936,15 @@ function setPanelWidth(v) {
       clearInterval(tryConnect);
       window.Echo.private('adisyon.' + USER_ID)
         .listen('.updated', (e) => {
-          // Masa kartını güncelle (liste ekranı)
-          if (e.payload && e.payload.room) {
-            updateTableCard(e.payload.room);
-          }
           // Eğer o an aynı masada açıksak siparişi yenile
           if (selectedRoomId && e.room_id === selectedRoomId) {
             api('/adisyon/masa/' + selectedRoomId + '/data').then(d => {
-              if (d && d.room) renderOrder(d);
+              if (d && d.room) { updateTableCard(d.room); renderOrder(d); }
+            });
+          } else if (e.room_id) {
+            // Masa listesini güncelle (başka masada olan değişiklikler)
+            api('/adisyon/masa/' + e.room_id + '/data').then(d => {
+              if (d && d.room) updateTableCard(d.room);
             });
           }
         });
@@ -2855,6 +2954,66 @@ function setPanelWidth(v) {
   }, 100);
 })();
 
+// ─── Garson Yönetimi ────────────────────────────────────────────
+function openGarsonlar() {
+  showModal('garsonlar');
+  loadGarsonlar();
+}
+
+async function loadGarsonlar() {
+  const list = document.getElementById('garsonlarList');
+  if (!list) return;
+  const d = await api('/waiters');
+  if (!d.waiters) { list.innerHTML = '<div style="color:var(--muted2);font-size:.75rem;text-align:center;padding:16px">Yüklenemedi</div>'; return; }
+  if (d.waiters.length === 0) {
+    list.innerHTML = '<div style="color:var(--muted2);font-size:.75rem;text-align:center;padding:16px">Henüz garson eklenmemiş</div>';
+    return;
+  }
+  list.innerHTML = d.waiters.map(w => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--s2);border-radius:7px;margin-bottom:5px;border:1px solid var(--border)">
+      <div>
+        <div style="font-size:.8rem;font-weight:600">${esc(w.name)}</div>
+        <div style="font-size:.68rem;color:var(--muted2)">${esc(w.email)}</div>
+      </div>
+      <button onclick="deleteGarson(${w.id})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.85rem" title="Sil">🗑️</button>
+    </div>
+  `).join('');
+}
+
+async function addGarson() {
+  const name     = document.getElementById('garsonAdi').value.trim();
+  const email    = document.getElementById('garsonEmail').value.trim();
+  const password = document.getElementById('garsonSifre').value;
+  if (!name || !email || !password) { toast('Tüm alanları doldurun'); return; }
+  if (password.length < 6) { toast('Şifre en az 6 karakter olmalı'); return; }
+  const d = await api('/waiters', 'POST', { name, email, password });
+  if (d.success) {
+    toast('✅ Garson eklendi');
+    document.getElementById('garsonAdi').value = '';
+    document.getElementById('garsonEmail').value = '';
+    document.getElementById('garsonSifre').value = '';
+    loadGarsonlar();
+  } else {
+    // Laravel validation errors come as {errors: {field: [messages]}}
+    let msg = d.error || d.message || '';
+    if (d.errors) {
+      msg = Object.values(d.errors).flat().join(', ');
+    }
+    toast('⚠️ ' + (msg || 'Eklenemedi'));
+  }
+}
+
+async function deleteGarson(id) {
+  if (!confirm('Bu garsonu silmek istediğinize emin misiniz?')) return;
+  const d = await api('/waiters/' + id, 'DELETE');
+  if (d.success) {
+    toast('Garson silindi');
+    loadGarsonlar();
+  } else {
+    toast('⚠️ ' + (d.error || 'Silinemedi'));
+  }
+}
+
 </script>
 <script>
   // PWA Service Worker kaydı
@@ -2862,5 +3021,60 @@ function setPanelWidth(v) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
 </script>
+
+{{-- Abonelik Uyarı Modalı --}}
+@php
+  $subUser = auth()->user();
+  $subDays = null;
+  $subWarn = false;
+  if ($subUser->subscription_expires_at && $subUser->subscription_status === 'active') {
+    $subDays = (int) now()->startOfDay()->diffInDays($subUser->subscription_expires_at->startOfDay(), false);
+    if (in_array($subDays, [7, 3, 2, 1, 0])) {
+      $subWarn = true;
+    }
+  }
+@endphp
+@if($subWarn)
+<div id="sub-warn-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;align-items:center;justify-content:center">
+  <div style="background:#1a1a2e;border-radius:16px;padding:32px 28px;width:380px;max-width:92vw;box-shadow:0 12px 48px rgba(0,0,0,.6);text-align:center;border:1px solid #2a2a3e">
+    @if($subDays === 0)
+      <div style="font-size:2.5rem;margin-bottom:12px">🔥</div>
+      <h3 style="color:#ef4444;font-size:1.15rem;font-weight:800;margin:0 0 8px">Aboneliğiniz Bugün Bitiyor!</h3>
+      <p style="color:#9ca3af;font-size:.85rem;line-height:1.6;margin:0 0 20px">
+        Aboneliğiniz <strong style="color:#ef4444">bugün sona erecek</strong>. Kesintisiz kullanmaya devam etmek için lütfen yenileyin.
+      </p>
+    @elseif($subDays <= 3)
+      <div style="font-size:2.5rem;margin-bottom:12px">⚠️</div>
+      <h3 style="color:#f59e0b;font-size:1.15rem;font-weight:800;margin:0 0 8px">Aboneliğiniz Bitmek Üzere!</h3>
+      <p style="color:#9ca3af;font-size:.85rem;line-height:1.6;margin:0 0 20px">
+        Aboneliğinizin bitmesine <strong style="color:#f59e0b">{{ $subDays }} gün</strong> kaldı. Kesintisiz kullanmaya devam etmek için lütfen yenileyin.
+      </p>
+    @else
+      <div style="font-size:2.5rem;margin-bottom:12px">📢</div>
+      <h3 style="color:#27A0B1;font-size:1.15rem;font-weight:800;margin:0 0 8px">Abonelik Hatırlatması</h3>
+      <p style="color:#9ca3af;font-size:.85rem;line-height:1.6;margin:0 0 20px">
+        Aboneliğinizin bitmesine <strong style="color:#27A0B1">{{ $subDays }} gün</strong> kaldı. Süreniz dolmadan yenilemeyi unutmayın.
+      </p>
+    @endif
+    <div style="display:flex;gap:10px;justify-content:center">
+      <a href="{{ route('subscription.select') }}" style="padding:10px 22px;border-radius:10px;background:#10b981;color:#fff;font-weight:700;font-size:.85rem;text-decoration:none;transition:opacity .15s">Yenile</a>
+      <button onclick="dismissSubWarn()" style="padding:10px 22px;border-radius:10px;background:transparent;border:1px solid #334155;color:#94a3b8;font-weight:600;font-size:.85rem;cursor:pointer;transition:all .15s">Tamam</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var key = 'sub_warn_dismissed_{{ $subDays }}';
+  if (!localStorage.getItem(key)) {
+    document.getElementById('sub-warn-overlay').style.display = 'flex';
+  }
+  window.dismissSubWarn = function(){
+    localStorage.setItem(key, '1');
+    document.getElementById('sub-warn-overlay').style.display = 'none';
+  };
+})();
+</script>
+@endif
+
 </body>
 </html>

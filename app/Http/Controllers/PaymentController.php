@@ -40,10 +40,11 @@ class PaymentController extends Controller
         $bankName      = Setting::get('bank_name',           'Ziraat Bankası');
         $iban          = Setting::get('bank_iban',           'TR00 0000 0000 0000 0000 0000 00');
         $accountHolder = Setting::get('bank_account_holder', 'Ad Soyad');
+        $checkoutNote  = Setting::get('checkout_note', '');
         $desc          = auth()->user()->name . ' - ' . $descMap[$plan] . ' Abonelik';
 
         return view('payment.checkout', compact(
-            'plan', 'price', 'label', 'bankName', 'iban', 'accountHolder', 'desc'
+            'plan', 'price', 'label', 'bankName', 'iban', 'accountHolder', 'checkoutNote', 'desc'
         ));
     }
 

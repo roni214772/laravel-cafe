@@ -12,7 +12,7 @@ class ProductController extends Controller
     public function index()
     {
         return response()->json(
-            Product::where('user_id', auth()->id())->orderBy('category')->orderBy('name')->get()
+            Product::where('user_id', auth()->user()->effectiveOwnerId())->orderBy('category')->orderBy('name')->get()
         );
     }
 

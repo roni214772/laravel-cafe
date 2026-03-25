@@ -16,6 +16,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'owner_id',
         'menu_token',
         'ui_settings',
         'subscription_status',
@@ -53,5 +55,35 @@ class User extends Authenticatable
     public function products()
     {
         return $this->hasMany(\App\Models\Product::class);
+    }
+
+    // ─── Rol Yardımcıları ───────────────────────────────────────────
+    public function isOwner(): bool
+    {
+        return $this->role === 'owner';
+    }
+
+    public function isWaiter(): bool
+    {
+        return $this->role === 'waiter';
+    }
+
+    /**
+     * Garson ise sahibini, sahipse kendisini döndürür.
+     * Rooms ve Products sorguları bu ID ile yapılır.
+     */
+    public function effectiveOwnerId(): int
+    {
+        return $this->isWaiter() ? (int) $this->owner_id : (int) $this->id;
+    }
+
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function waiters()
+    {
+        return $this->hasMany(User::class, 'owner_id');
     }
 }

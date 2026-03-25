@@ -7,8 +7,6 @@ use Illuminate\Http\Request;
 
 class SubscriptionActive
 {
-    // Bu e-posta admin — abonelik kontrolünden muaf
-    private const ADMIN_EMAIL = 'bruskefrin47@gmail.com';
 
     // Abonelik kontrolü yapılmayan rotalar
     private const EXEMPT_ROUTES = [
@@ -26,13 +24,24 @@ class SubscriptionActive
         $user = auth()->user();
 
         // Admin muaf
-        if ($user->email === self::ADMIN_EMAIL) {
+        if ($user->email === config('app.admin_email')) {
             return $next($request);
         }
 
         // Muaf rotalar
         if (in_array($request->route()?->getName(), self::EXEMPT_ROUTES)) {
             return $next($request);
+        }
+
+        // Garson ise sahibinin aboneliğini kontrol et
+        if ($user->role === 'waiter' && $user->owner_id) {
+            $owner = \App\Models\User::find($user->owner_id);
+            if ($owner && $owner->isSubscriptionActive()) {
+                return $next($request);
+            }
+            // Sahibinin aboneliği yoksa giriş engelle
+            \Illuminate\Support\Facades\Auth::logout();
+            return redirect()->route('login')->withErrors(['email' => 'İşletme sahibinin aboneliği aktif değil.']);
         }
 
         // Aboneliği aktif mi?
