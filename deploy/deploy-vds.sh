@@ -7,12 +7,12 @@
 
 set -e
 
-DOMAIN="SENIN-DOMAIN.com"          # ← kendi domain'ini yaz
+DOMAIN="_"                          # domain gelince güncellenecek
 APP_DIR="/var/www/cafepro"
 DB_NAME="cafepro"
 DB_USER="cafepro_user"
-DB_PASS="GUCLU-BIR-SIFRE-YAZ"     # ← güçlü şifre yaz
-REPO_URL=""                         # ← git repo URL'si (varsa)
+DB_PASS="CafeP0s_2025!xQ9z"       # güçlü şifre
+REPO_URL="https://github.com/roni214772/laravel-cafe.git"
 
 echo "════════════════════════════════════════"
 echo "  CafePro VDS Kurulumu Başlıyor..."
@@ -25,7 +25,8 @@ apt update && apt upgrade -y
 # ── 2. Gerekli Paketler ──────────────────────────────────────
 echo "[2/9] PHP, Nginx, MySQL, Node.js kuruluyor..."
 apt install -y software-properties-common
-add-apt-repository -y ppa:ondrej/php
+# Ubuntu 25.10 zaten PHP 8.3+ içerir, PPA eklemeye gerek olmayabilir
+add-apt-repository -y ppa:ondrej/php 2>/dev/null || echo "PPA eklenemedi, sistem PHP kullanılacak"
 apt update
 apt install -y \
     nginx \
@@ -57,7 +58,7 @@ echo "[4/9] Proje dosyaları kuruluyor..."
 mkdir -p ${APP_DIR}
 
 if [ -n "$REPO_URL" ]; then
-    git clone ${REPO_URL} ${APP_DIR}
+    git clone --branch master ${REPO_URL} ${APP_DIR}
 else
     echo "  → REPO_URL boş. Dosyaları elle yüklemen gerekiyor:"
     echo "    scp -r ./laravel-cafe/* root@SUNUCU-IP:${APP_DIR}/"
@@ -103,9 +104,14 @@ sed -i "s/SENIN-DOMAIN.com/${DOMAIN}/g" /etc/nginx/sites-available/cafepro
 nginx -t && systemctl reload nginx
 
 # ── 8. SSL (Let's Encrypt) ───────────────────────────────────
-echo "[8/9] SSL sertifikası alınıyor..."
-apt install -y certbot python3-certbot-nginx
-certbot --nginx -d ${DOMAIN} -d www.${DOMAIN} --non-interactive --agree-tos -m admin@${DOMAIN}
+echo "[8/9] SSL sertifikası..."
+if [ "$DOMAIN" = "_" ]; then
+    echo "  → Domain yok, SSL atlanıyor. Domain gelince çalıştır:"
+    echo "    certbot --nginx -d DOMAIN -d www.DOMAIN --agree-tos -m admin@DOMAIN"
+else
+    apt install -y certbot python3-certbot-nginx
+    certbot --nginx -d ${DOMAIN} -d www.${DOMAIN} --non-interactive --agree-tos -m admin@${DOMAIN}
+fi
 
 # ── 9. Supervisor ────────────────────────────────────────────
 echo "[9/9] Supervisor yapılandırılıyor..."
