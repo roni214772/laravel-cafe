@@ -118,6 +118,12 @@ class ProductController extends Controller
         $baseUrl = rtrim(parse_url($url, PHP_URL_SCHEME) . '://' . parse_url($url, PHP_URL_HOST), '/');
 
         try {
+            // 0. Bilinen QR menü platformlarını API'den çek (en güvenilir)
+            $knownItems = $this->tryKnownPlatformApi($url);
+            if (!empty($knownItems)) {
+                return response()->json(['success' => true, 'items' => $knownItems, 'count' => count($knownItems)]);
+            }
+
             // 1. Doğrudan HTML çek
             $response = Http::withoutVerifying()->timeout(15)->withHeaders([
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -197,6 +203,145 @@ class ProductController extends Controller
 
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Sayfa yüklenemedi: ' . $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Bilinen QR menü platformlarının API'lerinden veri çek
+     */
+    private function tryKnownPlatformApi(string $url): array
+    {
+        // KirazSoft / KirazMenu QR menü sistemi
+        if (preg_match('/qr\.kirazsoft\.com|kirazmenu\.com/', $url)) {
+            return $this->scrapeKirazsoft($url);
+        }
+
+        return [];
+    }
+
+    /**
+     * KirazSoft QR Menü API'sinden ürünleri çek
+     */
+    private function scrapeKirazsoft(string $url): array
+    {
+        try {
+            $apiBase = 'https://qrapi.kirazsoft.com/api/v1/';
+            $appSecret = '296259c642294f9eb7c223198f10b4f0';
+            $imageBase = 'https://qrapi.kirazsoft.com/';
+
+            // URL'den parametreleri çıkar: c=companyKey, b=branchKey, ci=companyId, bi=branchId
+            $params = [];
+            // Hash fragment'ı da parse et
+            $fragment = parse_url($url, PHP_URL_FRAGMENT);
+            if ($fragment && str_contains($fragment, '?')) {
+                parse_str(substr($fragment, strpos($fragment, '?') + 1), $params);
+            }
+            // Normal query params
+            $query = parse_url($url, PHP_URL_QUERY);
+            if ($query) {
+                parse_str($query, $queryParams);
+                $params = array_merge($params, $queryParams);
+            }
+
+            $companyKey = $params['c'] ?? null;
+            $branchKey  = $params['b'] ?? null;
+
+            if (!$companyKey) return [];
+
+            // 1. Menü key'ini al — branch key ile tablo opsiyonlarını sorgula
+            $menuKey = null;
+            $branchId = $params['bi'] ?? null;
+
+            if ($branchKey) {
+                $r = Http::withoutVerifying()->timeout(10)->get($apiBase . "Branches/GetBranchTableOptions", [
+                    'appSecret' => $appSecret,
+                    'branchKey' => $branchKey,
+                ]);
+                if ($r->successful()) {
+                    $data = $r->json();
+                    $menuKey  = $data['BranchMenus'][0]['Menu']['MenuKey'] ?? null;
+                    $branchId = $data['BranchMenus'][0]['BranchId'] ?? $branchId;
+                }
+            }
+
+            // Branch key ile bulamadıysa CompanyBranches dene
+            if (!$menuKey) {
+                $r2 = Http::withoutVerifying()->timeout(10)->get($apiBase . "Branches/GetBranchOptionsByCompanyKeyAndMenuKey", [
+                    'appSecret' => $appSecret,
+                    'companyKey' => $companyKey,
+                    'menuKey' => $branchKey ?? $companyKey,
+                ]);
+                if ($r2->successful()) {
+                    $data2 = $r2->json();
+                    $menuKey  = $data2['BranchMenus'][0]['Menu']['MenuKey'] ?? null;
+                    $branchId = $data2['BranchMenus'][0]['BranchId'] ?? $branchId;
+                }
+            }
+
+            if (!$menuKey || !$branchId) return [];
+
+            // 2. Menü ürünlerini çek
+            $r3 = Http::withoutVerifying()->timeout(15)->get($apiBase . "Menus/GetMenuByCompanyKeyAndMenuKeyV2", [
+                'appSecret'      => $appSecret,
+                'companyKey'     => $companyKey,
+                'menuKey'        => $menuKey,
+                'branchId'       => $branchId,
+                'branchMenuType' => 2,
+            ]);
+
+            if (!$r3->successful()) return [];
+
+            $menuData = $r3->json();
+            $categories = $menuData['menu']['Categories'] ?? [];
+            $items = [];
+
+            foreach ($categories as $cat) {
+                $catName = $cat['Name'] ?? '';
+                $products = $cat['Products'] ?? [];
+
+                foreach ($products as $product) {
+                    if (!($product['IsActive'] ?? false)) continue;
+
+                    $name  = $product['Name'] ?? '';
+                    $price = 0;
+
+                    // Fiyat
+                    if (!empty($product['ProductPrices'])) {
+                        $price = (float)($product['ProductPrices'][0]['Price'] ?? 0);
+                    }
+                    // Porsiyon fiyatları
+                    if ($price == 0 && !empty($product['ProductPortions'])) {
+                        foreach ($product['ProductPortions'] as $portion) {
+                            if (!empty($portion['ProductPortionPrices'])) {
+                                $price = (float)($portion['ProductPortionPrices'][0]['Price'] ?? 0);
+                                break;
+                            }
+                        }
+                    }
+
+                    // Görsel
+                    $image = '';
+                    if (!empty($product['ProductImages'])) {
+                        $imgPath = $product['ProductImages'][0]['ImageUrl'] ?? '';
+                        if ($imgPath) {
+                            $image = str_starts_with($imgPath, 'http') ? $imgPath : $imageBase . $imgPath;
+                        }
+                    }
+
+                    if ($name) {
+                        $items[] = [
+                            'name'     => $name,
+                            'price'    => $price,
+                            'category' => $catName,
+                            'image'    => $image,
+                        ];
+                    }
+                }
+            }
+
+            return $items;
+        } catch (\Exception $e) {
+            return [];
         }
     }
 
