@@ -1473,6 +1473,33 @@
       <button type="button" class="btn-ok" onclick="savePlatformSettings()" style="width:100%;font-size:.72rem;padding:7px;margin-top:4px">💾 Platform Ayarlarını Kaydet</button>
     </div>
 
+    <!-- MENÜ İÇE AKTAR -->
+    <div style="margin-top:18px;padding:16px;background:var(--s3);border-radius:10px;border:1px solid var(--border)">
+      <div class="theme-section-label">🔗 Web Menüden Ürün İçe Aktar</div>
+      <p style="font-size:.65rem;color:var(--muted2);margin-bottom:8px">Başka bir restoranın web menü sayfasının URL'sini yapıştırarak ürünleri çekip kendi menünüze ekleyebilirsiniz.</p>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input id="scrapeMenuUrl" type="url" class="form-control" placeholder="https://restoran.com/menu" style="flex:1;font-size:.76rem">
+        <button type="button" onclick="scrapeMenuUrl()" style="font-size:.68rem;padding:6px 14px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700;white-space:nowrap" id="btnScrapeMenu">🔍 Çek</button>
+      </div>
+      <div id="scrapeMenuResult" style="display:none">
+        <div id="scrapeMenuStatus" style="font-size:.68rem;margin-bottom:6px"></div>
+        <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:6px">
+          <table style="width:100%;font-size:.68rem;border-collapse:collapse">
+            <thead>
+              <tr style="background:var(--s2);position:sticky;top:0">
+                <th style="padding:5px;text-align:center;width:30px"><input type="checkbox" id="scrapeSelectAll" onchange="toggleScrapeSelectAll()" checked></th>
+                <th style="padding:5px;text-align:left">Ürün Adı</th>
+                <th style="padding:5px;text-align:right">Fiyat</th>
+                <th style="padding:5px;text-align:left">Kategori</th>
+              </tr>
+            </thead>
+            <tbody id="scrapeMenuBody"></tbody>
+          </table>
+        </div>
+        <button type="button" onclick="importSelectedProducts()" style="width:100%;font-size:.72rem;padding:7px;margin-top:8px;background:#22c55e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700" id="btnImportMenu">📥 Seçilenleri İçe Aktar</button>
+      </div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('ayarlar')">İptal</button>
       <button class="btn-ok" onclick="saveSettings()">Kaydet</button>
@@ -3599,6 +3626,81 @@ openSettings = function() {
 if (USER_ROLE === 'owner') {
   loadPaketStats();
   setInterval(loadPaketStats, 30000);
+}
+
+// ── Menü İçe Aktar (Scrape & Import) ──
+let scrapedItems = [];
+
+async function scrapeMenuUrl() {
+  const url = document.getElementById('scrapeMenuUrl').value.trim();
+  if (!url) { toast('⚠️ Lütfen bir URL girin'); return; }
+  const btn = document.getElementById('btnScrapeMenu');
+  btn.disabled = true;
+  btn.textContent = '⏳ Çekiliyor...';
+  const resultDiv = document.getElementById('scrapeMenuResult');
+  const statusDiv = document.getElementById('scrapeMenuStatus');
+  resultDiv.style.display = 'none';
+
+  try {
+    const d = await api('/products/scrape-menu', 'POST', { url });
+    if (!d.success) {
+      toast('⚠️ ' + (d.error || 'Ürün çekilemedi'));
+      btn.disabled = false;
+      btn.textContent = '🔍 Çek';
+      return;
+    }
+    scrapedItems = d.items;
+    statusDiv.innerHTML = `<span style="color:#10b981;font-weight:700">✓ ${d.count} ürün bulundu</span>`;
+    const tbody = document.getElementById('scrapeMenuBody');
+    tbody.innerHTML = scrapedItems.map((item, i) => `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:4px;text-align:center"><input type="checkbox" class="scrape-check" data-idx="${i}" checked></td>
+        <td style="padding:4px">${esc(item.name)}</td>
+        <td style="padding:4px;text-align:right;white-space:nowrap">${item.price > 0 ? item.price.toFixed(2) + ' ₺' : '-'}</td>
+        <td style="padding:4px;font-size:.62rem;color:var(--muted2)">${esc(item.category || '')}</td>
+      </tr>
+    `).join('');
+    resultDiv.style.display = '';
+    document.getElementById('scrapeSelectAll').checked = true;
+  } catch (e) {
+    toast('⚠️ Hata: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = '🔍 Çek';
+}
+
+function toggleScrapeSelectAll() {
+  const checked = document.getElementById('scrapeSelectAll').checked;
+  document.querySelectorAll('.scrape-check').forEach(cb => cb.checked = checked);
+}
+
+async function importSelectedProducts() {
+  const selected = [];
+  document.querySelectorAll('.scrape-check:checked').forEach(cb => {
+    const idx = parseInt(cb.dataset.idx);
+    if (scrapedItems[idx]) selected.push(scrapedItems[idx]);
+  });
+  if (!selected.length) { toast('⚠️ Hiç ürün seçilmedi'); return; }
+  const btn = document.getElementById('btnImportMenu');
+  btn.disabled = true;
+  btn.textContent = '⏳ Ekleniyor...';
+  try {
+    const d = await api('/products/import-menu', 'POST', { items: selected });
+    if (d.success) {
+      toast('✓ ' + d.message);
+      loadProducts();
+      // Temizle
+      document.getElementById('scrapeMenuResult').style.display = 'none';
+      document.getElementById('scrapeMenuUrl').value = '';
+      scrapedItems = [];
+    } else {
+      toast('⚠️ İçe aktarma hatası');
+    }
+  } catch (e) {
+    toast('⚠️ Hata: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = '📥 Seçilenleri İçe Aktar';
 }
 
 </script>

@@ -119,6 +119,10 @@ Route::get('/menu/{token}', [\App\Http\Controllers\MenuController::class, 'index
             Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
             Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
+            // Menü İçe Aktar (scrape/import)
+            Route::post('/products/scrape-menu', [ProductController::class, 'scrapeMenu'])->name('products.scrape-menu');
+            Route::post('/products/import-menu', [ProductController::class, 'importMenu'])->name('products.import-menu');
+
             // Kategori görselleri
             Route::get('/categories/images',   [CategoryController::class, 'listImages'])->name('categories.images');
             Route::post('/categories/image',   [CategoryController::class, 'uploadImage'])->name('categories.upload');
