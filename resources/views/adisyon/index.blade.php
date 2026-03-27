@@ -401,6 +401,8 @@
     .tcard-act-btn+.tcard-act-btn{
       border-left:1px solid var(--border);
     }
+    .tcard-act-delete{color:var(--red)!important;flex:0 0 36px}
+    .tcard-act-delete:hover{background:rgba(239,68,68,.15)!important;color:#fff!important}
 
     /* 
        SCREEN 2  POS
@@ -481,25 +483,41 @@
     .order-totals.collapsed .totals-body{display:none}
     .total-row{display:flex;justify-content:space-between;align-items:center;font-size:.74rem;padding:2px 0;color:var(--muted2)}
     .total-row.main{font-size:.9rem;font-weight:800;color:var(--text);padding:5px 0;border-top:1px solid var(--border);margin-top:3px}
-    .payment-area{padding:9px 12px;border-top:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:6px}
+    .payment-area{padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:8px}
     .payment-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
     .prow-group{display:flex;flex-direction:column;gap:3px}
     .prow-group label{font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase}
     .form-control{background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 9px;font-size:.78rem;outline:none;width:100%;transition:border-color .15s;font-family:inherit}
     .form-control:focus{border-color:var(--primary)}
     select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:22px}
+    /* Ödeme Tipi Toggle */
+    .pay-type-toggle{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+    .pay-type-btn{padding:10px 6px;font-size:.78rem;font-weight:800;text-align:center;cursor:pointer;border:none;transition:all .2s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--s3);color:var(--muted2)}
+    .pay-type-btn:first-child{border-right:1px solid var(--border)}
+    .pay-type-btn.active-nakit{background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.15)}
+    .pay-type-btn.active-kart{background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.15)}
+    .pay-type-btn:not(.active-nakit):not(.active-kart):hover{background:var(--s2);color:var(--text)}
+    .pay-type-icon{font-size:1.1rem;line-height:1}
+    /* Kalan tutar bilgisi */
+    .pay-remaining-info{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2)}
+    .pay-remaining-label{font-size:.72rem;font-weight:700;color:var(--muted2);text-transform:uppercase}
+    .pay-remaining-amount{font-size:.95rem;font-weight:900;color:var(--red)}
+    /* Ana ödeme butonu */
+    .pay-main-btn{width:100%;padding:12px;border-radius:8px;font-size:.85rem;font-weight:800;border:none;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.3px}
+    .pay-main-btn.nakit-mode{background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;box-shadow:0 2px 8px rgba(22,163,74,.3)}
+    .pay-main-btn.nakit-mode:hover{background:linear-gradient(135deg,#166534,#15803d);box-shadow:0 3px 12px rgba(22,163,74,.4)}
+    .pay-main-btn.kart-mode{background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;box-shadow:0 2px 8px rgba(59,130,246,.3)}
+    .pay-main-btn.kart-mode:hover{background:linear-gradient(135deg,#1e40af,#2563eb);box-shadow:0 3px 12px rgba(59,130,246,.4)}
+    .pay-main-btn:active{transform:scale(.98)}
+    /* Tutar input düzeni */
+    .pay-amount-row{display:flex;gap:6px;align-items:flex-end}
+    .pay-amount-row .prow-group{flex:1}
     .payment-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
     .pbtn{padding:9px 5px;border-radius:6px;font-size:.75rem;font-weight:700;border:1px solid var(--border);cursor:pointer;transition:all .15s;text-align:center}
     .pbtn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
     .pbtn.primary:hover{background:var(--primary2)}
     .pbtn.secondary{background:var(--s2);color:var(--muted2)}
     .pbtn.secondary:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-dim)}
-    .danger-btns{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-    .dbtn{padding:7px;border-radius:6px;font-size:.72rem;font-weight:700;text-align:center;cursor:pointer;transition:all .15s;border:1px solid}
-    .dbtn.warn{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.25);color:var(--orange)}
-    .dbtn.warn:hover{background:rgba(245,158,11,.2)}
-    .dbtn.danger{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:var(--red)}
-    .dbtn.danger:hover{background:rgba(239,68,68,.2)}
 
     ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#262626;border-radius:4px}::-webkit-scrollbar-track{background:transparent}
 
@@ -540,6 +558,40 @@
     /* TOAST */
     .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 20px;font-size:.8rem;font-weight:600;z-index:999;transition:transform .25s;pointer-events:none}
     .toast.show{transform:translateX(-50%) translateY(0)}
+
+    /* PAKET SİPARİŞ */
+    .pkt-tab{padding:5px 12px;border-radius:6px;font-size:.68rem;font-weight:700;border:1px solid var(--border);background:var(--s3);color:var(--muted2);cursor:pointer;transition:all .15s}
+    .pkt-tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .pkt-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;transition:box-shadow .2s}
+    .pkt-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.15)}
+    .pkt-card-head{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+    .pkt-platform{font-size:.6rem;font-weight:900;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.3px}
+    .pkt-platform.trendyol{background:rgba(242,122,26,.15);color:#f27a1a}
+    .pkt-platform.yemeksepeti{background:rgba(226,0,122,.12);color:#e2007a}
+    .pkt-platform.getir{background:rgba(93,62,188,.12);color:#5d3ebc}
+    .pkt-platform.telefon{background:rgba(59,130,246,.12);color:#3b82f6}
+    .pkt-platform.diger{background:var(--s3);color:var(--muted2)}
+    .pkt-status{font-size:.58rem;font-weight:800;padding:2px 7px;border-radius:4px;margin-left:auto}
+    .pkt-status.new{background:rgba(239,68,68,.15);color:#ef4444}
+    .pkt-status.preparing{background:rgba(245,158,11,.15);color:#f59e0b}
+    .pkt-status.ready{background:rgba(16,185,129,.15);color:#10b981}
+    .pkt-status.on_way{background:rgba(59,130,246,.15);color:#3b82f6}
+    .pkt-status.delivered{background:rgba(107,114,128,.12);color:#6b7280}
+    .pkt-status.cancelled{background:rgba(239,68,68,.08);color:#9ca3af}
+    .pkt-card-body{padding:8px 12px}
+    .pkt-customer{font-size:.72rem;color:var(--text);margin-bottom:4px}
+    .pkt-item-row{display:flex;justify-content:space-between;font-size:.7rem;padding:3px 0;border-bottom:1px dashed var(--border)}
+    .pkt-item-row:last-child{border-bottom:none}
+    .pkt-card-footer{display:flex;align-items:center;gap:6px;padding:8px 12px;border-top:1px solid var(--border);flex-wrap:wrap}
+    .pkt-total{font-weight:900;font-size:.85rem;color:var(--primary)}
+    .pkt-time{font-size:.6rem;color:var(--muted2)}
+    .pkt-action-btn{padding:5px 10px;border-radius:5px;font-size:.66rem;font-weight:800;border:none;cursor:pointer;transition:all .15s;font-family:inherit}
+    .pkt-action-btn.accept{background:var(--primary);color:#fff}
+    .pkt-action-btn.ready-btn{background:#10b981;color:#fff}
+    .pkt-action-btn.deliver{background:linear-gradient(135deg,#15803d,#16a34a);color:#fff}
+    .pkt-action-btn.onway{background:#3b82f6;color:#fff}
+    .pkt-action-btn.cancel-btn{background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.2)}
+    .pkt-action-btn.delete-btn{background:rgba(239,68,68,.12);color:#ef4444}
 
     /* HAZIR NOTIFICATION BANNER */
     .notif-banner{
@@ -596,7 +648,8 @@
       .qty-ctrl button{width:34px;height:34px;font-size:1rem}
       .qty-ctrl span{width:38px;height:34px;font-size:.86rem}
       .pbtn{padding:13px 5px;font-size:.8rem}
-      .dbtn{padding:11px}
+      .pay-type-btn{padding:12px 6px;font-size:.82rem}
+      .pay-main-btn{padding:14px;font-size:.9rem}
       .pcard{padding:11px 12px}
       .pcard h4{font-size:.84rem}
       .pcard .pprice{font-size:.86rem}
@@ -701,6 +754,7 @@
     <button class="tb-btn mob-hide" onclick="openSettings()" title="Ayarlar">&#9881;</button>
     <button class="tb-btn mob-hide" onclick="openQr()" title="QR Menü">QR</button>
     <button class="tb-btn mob-hide" onclick="openGarsonlar()" title="Garsonlar">👤 Garsonlar</button>
+    <button class="tb-btn mob-hide" onclick="openPaketSiparis()" title="Paket Siparişler" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border:none;position:relative">📦 Paket <span id="paketBadge" style="position:absolute;top:-5px;right:-5px;background:#ef4444;color:#fff;border-radius:50%;font-size:.55rem;min-width:16px;height:16px;display:none;align-items:center;justify-content:center;font-weight:900;border:2px solid var(--bg)">0</span></button>
     <div class="topbar-div mob-hide"></div>
     <a href="{{ route('subscription.select') }}" class="tb-btn mob-hide" title="Aboneliğini yönet / Uzat">💳 Abonelik</a>
     @else
@@ -722,6 +776,7 @@
         <button class="mob-dd-item" onclick="closeMobMenu();openQr()"><span class="mob-dd-icon">📱</span>QR Menü</button>
         <button class="mob-dd-item" onclick="closeMobMenu();openSettings()"><span class="mob-dd-icon">⚙️</span>Ayarlar</button>
         <button class="mob-dd-item" onclick="closeMobMenu();openGarsonlar()"><span class="mob-dd-icon">👤</span>Garsonlar</button>
+        <button class="mob-dd-item" onclick="closeMobMenu();openPaketSiparis()"><span class="mob-dd-icon">📦</span>Paket Siparişler</button>
         <a href="{{ route('subscription.select') }}" class="mob-dd-item"><span class="mob-dd-icon">💳</span>Aboneliği Uzat</a>
         @endif
         <div style="border-top:1px solid var(--border);margin:4px 0"></div>
@@ -810,6 +865,7 @@
             <div class="tcard-actions" onclick="event.stopPropagation()">
               <button class="tcard-act-btn" onclick="selectAndRename({{ $room->id }}, '{{ addslashes($room->name) }}')">✎ Adlandır</button>
               <button class="tcard-act-btn" onclick="toggleMasaDirect({{ $room->id }})">⏻ Aç/Kapat</button>
+              <button class="tcard-act-btn tcard-act-delete" onclick="deleteMasaDirect({{ $room->id }})">🗑</button>
             </div>
           </div>
         @endforeach
@@ -901,41 +957,39 @@
       </div>
       <div class="payment-area" id="paymentArea" style="display:none">
         @if(($userRole ?? 'owner') === 'owner')
-        <div class="payment-row">
-          <div class="prow-group">
-            <label>Ödeme Tipi</label>
-            <select id="odemeTipi" class="form-control">
-              <option>Nakit</option>
-              <option>Kredi Kartı</option>
-              <option>Havale</option>
-            </select>
-          </div>
+        <!-- Ödeme Tipi Toggle -->
+        <div class="pay-type-toggle">
+          <button class="pay-type-btn active-nakit" id="payBtnNakit" onclick="selectPayMethod('Nakit')">
+            <span class="pay-type-icon">💵</span> NAKİT
+          </button>
+          <button class="pay-type-btn" id="payBtnKart" onclick="selectPayMethod('Kart')">
+            <span class="pay-type-icon">💳</span> KART
+          </button>
+        </div>
+        <!-- Kalan tutar bilgisi -->
+        <div class="pay-remaining-info" id="payRemainingInfo" style="display:none">
+          <span class="pay-remaining-label">Kalan Tutar:</span>
+          <span class="pay-remaining-amount" id="payRemainingAmount">0.00 ₺</span>
+        </div>
+        <!-- Tutar alanı (sadece nakit modda görünür) -->
+        <div class="pay-amount-row" id="nakitAmountRow">
           <div class="prow-group">
             <label>Alınan Tutar (₺)</label>
             <input id="alinanTutar" type="number" class="form-control" placeholder="Opsiyonel" min="0" step="0.01">
           </div>
         </div>
+        <!-- Gizli ödeme tipi -->
+        <select id="odemeTipi" style="display:none"><option>Nakit</option><option>Kredi Kartı</option></select>
+        <!-- Ana ödeme butonu -->
+        <button class="pay-main-btn nakit-mode" id="btnPayMain" onclick="handlePayment()">
+          💵 NAKİT ÖDEME AL
+        </button>
         @endif
-        <textarea id="orderNote" class="form-control" rows="2" placeholder="Sipariş notu..." style="resize:none;font-size:.74rem;margin-bottom:6px" oninput="debounceSaveNote()"></textarea>
         <div class="payment-btns">
-          @if(($userRole ?? 'owner') === 'owner')
-          <button class="pbtn primary" onclick="odemeAl()"> Ödeme Al</button>
-          @endif
           <button class="pbtn fire" id="btnFire" onclick="fireTokitchen()" disabled>🍳 Mutfağa Gönder</button>
           <button class="pbtn secondary" onclick="goMasalar()">◄ Masalar</button>
+          <button class="pbtn secondary" onclick="printFis()">🧾 Fiş</button>
         </div>
-        @if(($userRole ?? 'owner') === 'owner')
-        <div class="payment-btns" style="margin-top:4px">
-          <button class="pbtn secondary" id="btnPosDevice" onclick="posOdemeGonder()" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border:none">🏧 POS Cihazına Gönder</button>
-          <button class="pbtn secondary" onclick="hesabiBol()">Hesabı Böl</button>
-          <button class="pbtn secondary" onclick="openTransfer()">⇔ Transfer</button>
-          <button class="pbtn secondary" onclick="printFis()"> Fiş</button>
-        </div>
-        <div class="danger-btns">
-          <button class="dbtn warn" onclick="adisyonuTemizle()"> Temizle</button>
-          <button class="dbtn danger" onclick="masayiSil()"> Masayı Sil</button>
-        </div>
-        @endif
       </div>
     </div>
 
@@ -1357,6 +1411,68 @@
       <div id="posTestResult" style="font-size:.68rem;color:var(--muted2);margin-top:6px;display:none"></div>
     </div>
 
+    <hr class="theme-divider">
+
+    <!-- PLATFORM ENTEGRASYON AYARLARI -->
+    <div class="theme-section">
+      <div class="theme-section-label">📦 Paket Sipariş Platform Entegrasyonu</div>
+      <p style="font-size:.68rem;color:var(--muted2);margin-bottom:12px">Trendyol Go, Yemeksepeti, Getir hesap bilgilerinizi girin. Siparişler otomatik olarak sisteminize düşecektir.</p>
+
+      <!-- Trendyol -->
+      <div style="padding:10px;background:var(--s3);border-radius:8px;border:1px solid var(--border);margin-bottom:10px">
+        <div style="font-size:.72rem;font-weight:800;margin-bottom:8px;color:#f27a1a">🟠 Trendyol Go</div>
+        <div class="fg" style="margin-bottom:6px">
+          <label style="font-size:.68rem;font-weight:600">Supplier ID (Mağaza No)</label>
+          <input id="pltTrendyolSupplierId" type="text" class="form-control" placeholder="123456" style="font-size:.72rem">
+        </div>
+        <div class="fg" style="margin-bottom:6px">
+          <label style="font-size:.68rem;font-weight:600">API Key</label>
+          <input id="pltTrendyolApiKey" type="text" class="form-control" placeholder="API Key" style="font-size:.72rem">
+        </div>
+        <div class="fg" style="margin-bottom:6px">
+          <label style="font-size:.68rem;font-weight:600">API Secret</label>
+          <input id="pltTrendyolApiSecret" type="password" class="form-control" placeholder="API Secret" style="font-size:.72rem">
+        </div>
+        <button type="button" onclick="testPlatformConn('trendyol')" style="font-size:.65rem;padding:4px 10px;background:rgba(242,122,26,.15);color:#f27a1a;border:1px solid rgba(242,122,26,.3);border-radius:5px;cursor:pointer;font-weight:700">🧪 Bağlantıyı Test Et</button>
+      </div>
+
+      <!-- Yemeksepeti -->
+      <div style="padding:10px;background:var(--s3);border-radius:8px;border:1px solid var(--border);margin-bottom:10px">
+        <div style="font-size:.72rem;font-weight:800;margin-bottom:8px;color:#e2007a">🟣 Yemeksepeti</div>
+        <div class="fg" style="margin-bottom:6px">
+          <label style="font-size:.68rem;font-weight:600">Restaurant ID</label>
+          <input id="pltYsRestaurantId" type="text" class="form-control" placeholder="Restaurant ID" style="font-size:.72rem">
+        </div>
+        <div class="fg" style="margin-bottom:6px">
+          <label style="font-size:.68rem;font-weight:600">API Key</label>
+          <input id="pltYsApiKey" type="text" class="form-control" placeholder="API Key" style="font-size:.72rem">
+        </div>
+        <div class="fg" style="margin-bottom:6px">
+          <label style="font-size:.68rem;font-weight:600">API Secret</label>
+          <input id="pltYsApiSecret" type="password" class="form-control" placeholder="API Secret" style="font-size:.72rem">
+        </div>
+        <button type="button" onclick="testPlatformConn('yemeksepeti')" style="font-size:.65rem;padding:4px 10px;background:rgba(226,0,122,.12);color:#e2007a;border:1px solid rgba(226,0,122,.3);border-radius:5px;cursor:pointer;font-weight:700">🧪 Bağlantıyı Test Et</button>
+      </div>
+
+      <!-- Getir -->
+      <div style="padding:10px;background:var(--s3);border-radius:8px;border:1px solid var(--border);margin-bottom:10px">
+        <div style="font-size:.72rem;font-weight:800;margin-bottom:8px;color:#5d3ebc">🟣 Getir Yemek</div>
+        <div class="fg" style="margin-bottom:6px">
+          <label style="font-size:.68rem;font-weight:600">Restaurant ID</label>
+          <input id="pltGetirRestaurantId" type="text" class="form-control" placeholder="Restaurant ID" style="font-size:.72rem">
+        </div>
+        <div class="fg" style="margin-bottom:6px">
+          <label style="font-size:.68rem;font-weight:600">API Token</label>
+          <input id="pltGetirApiToken" type="password" class="form-control" placeholder="API Token" style="font-size:.72rem">
+        </div>
+        <button type="button" onclick="testPlatformConn('getir')" style="font-size:.65rem;padding:4px 10px;background:rgba(93,62,188,.12);color:#5d3ebc;border:1px solid rgba(93,62,188,.3);border-radius:5px;cursor:pointer;font-weight:700">🧪 Bağlantıyı Test Et</button>
+      </div>
+
+      <div id="platformTestResult" style="font-size:.68rem;margin-top:6px;display:none"></div>
+
+      <button type="button" class="btn-ok" onclick="savePlatformSettings()" style="width:100%;font-size:.72rem;padding:7px;margin-top:4px">💾 Platform Ayarlarını Kaydet</button>
+    </div>
+
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('ayarlar')">İptal</button>
       <button class="btn-ok" onclick="saveSettings()">Kaydet</button>
@@ -1394,6 +1510,133 @@
 
     <div class="modal-actions" style="margin-top:12px">
       <button class="btn-cancel" onclick="closeModal('garsonlar')">Kapat</button>
+    </div>
+  </div>
+</div>
+@endif
+
+<!-- Paket Sipariş Modal -->
+@if(($userRole ?? 'owner') === 'owner')
+<div class="modal-bg" id="modal-paketSiparis">
+  <div class="modal" style="width:700px;max-height:92vh;overflow-y:auto;padding:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h3 style="margin:0;font-size:1rem">📦 Paket Siparişler</h3>
+      <button onclick="closeModal('paketSiparis')" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted2)">✕</button>
+    </div>
+
+    <!-- İstatistik Bar -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px">
+      <div style="text-align:center;padding:8px 4px;background:rgba(239,68,68,.1);border-radius:8px;border:1px solid rgba(239,68,68,.2)">
+        <div id="pktStatNew" style="font-size:1.2rem;font-weight:900;color:#ef4444">0</div>
+        <div style="font-size:.58rem;color:var(--muted2);font-weight:700">YENİ</div>
+      </div>
+      <div style="text-align:center;padding:8px 4px;background:rgba(245,158,11,.1);border-radius:8px;border:1px solid rgba(245,158,11,.2)">
+        <div id="pktStatPreparing" style="font-size:1.2rem;font-weight:900;color:#f59e0b">0</div>
+        <div style="font-size:.58rem;color:var(--muted2);font-weight:700">HAZIRLANIYOR</div>
+      </div>
+      <div style="text-align:center;padding:8px 4px;background:rgba(16,185,129,.1);border-radius:8px;border:1px solid rgba(16,185,129,.2)">
+        <div id="pktStatReady" style="font-size:1.2rem;font-weight:900;color:#10b981">0</div>
+        <div style="font-size:.58rem;color:var(--muted2);font-weight:700">HAZIR</div>
+      </div>
+      <div style="text-align:center;padding:8px 4px;background:var(--s3);border-radius:8px;border:1px solid var(--border)">
+        <div id="pktStatDelivered" style="font-size:1.2rem;font-weight:900;color:var(--text)">0</div>
+        <div style="font-size:.58rem;color:var(--muted2);font-weight:700">TESLİM (BUGÜN)</div>
+      </div>
+      <div style="text-align:center;padding:8px 4px;background:rgba(39,160,177,.1);border-radius:8px;border:1px solid rgba(39,160,177,.2)">
+        <div id="pktStatTotal" style="font-size:1.2rem;font-weight:900;color:var(--primary)">0₺</div>
+        <div style="font-size:.58rem;color:var(--muted2);font-weight:700">CİRO (BUGÜN)</div>
+      </div>
+    </div>
+
+    <!-- Filtre Tabları -->
+    <div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap">
+      <button class="pkt-tab active" onclick="filterPaket('active',this)">🔴 Aktif</button>
+      <button class="pkt-tab" onclick="filterPaket('delivered',this)">✅ Teslim</button>
+      <button class="pkt-tab" onclick="filterPaket('cancelled',this)">❌ İptal</button>
+      <button class="pkt-tab" onclick="filterPaket('all',this)">📋 Tümü</button>
+      <div style="flex:1"></div>
+      <button onclick="showNewPaketForm()" style="padding:5px 12px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:.7rem;font-weight:800;cursor:pointer">+ Yeni Sipariş</button>
+    </div>
+
+    <!-- Yeni Sipariş Formu (gizli) -->
+    <div id="paketNewForm" style="display:none;padding:12px;background:var(--s3);border-radius:10px;border:1px solid var(--border);margin-bottom:12px">
+      <div style="font-size:.78rem;font-weight:800;margin-bottom:10px">📝 Yeni Paket Sipariş</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div class="fg" style="margin-bottom:0">
+          <label style="font-size:.65rem">Platform</label>
+          <select id="pktPlatform" class="form-control" style="font-size:.72rem">
+            <option value="telefon">📞 Telefon</option>
+            <option value="trendyol">🟠 Trendyol Go</option>
+            <option value="yemeksepeti">🟣 Yemeksepeti</option>
+            <option value="getir">🟣 Getir</option>
+            <option value="diger">📦 Diğer</option>
+          </select>
+        </div>
+        <div class="fg" style="margin-bottom:0">
+          <label style="font-size:.65rem">Ödeme</label>
+          <select id="pktPaymentMethod" class="form-control" style="font-size:.72rem">
+            <option value="platform">Platform</option>
+            <option value="cash">Nakit</option>
+            <option value="card">Kart</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div class="fg" style="margin-bottom:0">
+          <label style="font-size:.65rem">Müşteri Adı</label>
+          <input id="pktCustomerName" type="text" class="form-control" placeholder="Ad Soyad" style="font-size:.72rem">
+        </div>
+        <div class="fg" style="margin-bottom:0">
+          <label style="font-size:.65rem">Telefon</label>
+          <input id="pktCustomerPhone" type="text" class="form-control" placeholder="05XX" style="font-size:.72rem">
+        </div>
+      </div>
+      <div class="fg" style="margin-bottom:8px">
+        <label style="font-size:.65rem">Adres</label>
+        <input id="pktCustomerAddress" type="text" class="form-control" placeholder="Teslimat adresi" style="font-size:.72rem">
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label style="font-size:.65rem">Not</label>
+        <input id="pktCustomerNote" type="text" class="form-control" placeholder="Sipariş notu" style="font-size:.72rem">
+      </div>
+
+      <!-- Ürün ekleme -->
+      <div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:8px">
+        <div style="font-size:.7rem;font-weight:700;margin-bottom:6px">Ürün Ekle</div>
+        <div style="display:flex;gap:6px;align-items:end;flex-wrap:wrap">
+          <div class="fg" style="flex:2;margin-bottom:0;min-width:120px">
+            <label style="font-size:.6rem">Menüden Seç</label>
+            <select id="pktProductSelect" class="form-control" onchange="pktProductChanged()" style="font-size:.7rem">
+              <option value="">— Manuel Gir —</option>
+            </select>
+          </div>
+          <div class="fg" style="flex:2;margin-bottom:0;min-width:100px">
+            <label style="font-size:.6rem">Ürün Adı</label>
+            <input id="pktItemName" type="text" class="form-control" placeholder="Ürün" style="font-size:.7rem">
+          </div>
+          <div class="fg" style="flex:1;margin-bottom:0;min-width:60px">
+            <label style="font-size:.6rem">Fiyat</label>
+            <input id="pktItemPrice" type="number" step="0.01" class="form-control" placeholder="₺" style="font-size:.7rem">
+          </div>
+          <div class="fg" style="flex:0 0 45px;margin-bottom:0">
+            <label style="font-size:.6rem">Adet</label>
+            <input id="pktItemQty" type="number" min="1" value="1" class="form-control" style="font-size:.7rem">
+          </div>
+          <button onclick="pktAddItem()" style="padding:6px 10px;background:var(--primary);color:#fff;border:none;border-radius:5px;font-size:.72rem;font-weight:800;cursor:pointer;margin-bottom:0">+</button>
+        </div>
+      </div>
+      <div id="pktItemsList" style="margin-bottom:10px;min-height:30px">
+        <div style="font-size:.72rem;color:var(--muted2);padding:6px 0">Henüz ürün eklenmedi</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="submitNewPaket()" class="btn-ok" style="flex:1;font-size:.72rem;padding:7px">✓ Siparişi Oluştur</button>
+        <button onclick="hidePaketForm()" class="btn-cancel" style="font-size:.72rem;padding:7px">İptal</button>
+      </div>
+    </div>
+
+    <!-- Sipariş Listesi -->
+    <div id="paketOrdersList" style="min-height:100px">
+      <div style="text-align:center;padding:30px;color:var(--muted2);font-size:.8rem">Yükleniyor...</div>
     </div>
   </div>
 </div>
@@ -1643,6 +1886,8 @@ function renderOrder(data) {
   if(room) updateTableCard(room);
   const orderNote = document.getElementById('orderNote');
   if(orderNote) orderNote.value = data.order?.note || '';
+  // Kalan tutar bilgisini güncelle
+  if (typeof updatePayRemainingInfo === 'function') updatePayRemainingInfo();
   // Fire button (case-insensitive, null/boş güvenli)
   // Garsonlar için: ürün varsa buton aktif olsun, kitchen_status ne olursa olsun
   const draftCount = currentItems.filter(i => {
@@ -1766,6 +2011,99 @@ async function masayiSil(){
   toast(' Masa silindi');
 }
 
+// ── Ödeme Tipi Seçimi ───────────────────────────────────────────
+let currentPayMethod = 'Nakit';
+
+function getKalanTutar() {
+  const sub = currentItems.reduce((s, i) => s + i.total, 0);
+  const kdvP = parseFloat(document.getElementById('kdv')?.value) || 0;
+  const serP = parseFloat(document.getElementById('servis')?.value) || 0;
+  const indT = document.getElementById('indirimTipi')?.value || 'Tutar';
+  const indV = parseFloat(document.getElementById('indirimDeger')?.value) || 0;
+  let indirim = 0;
+  if (indT === 'Tutar') indirim = indV;
+  if (indT === 'Yuzde') indirim = sub * indV / 100;
+  const serAmt = sub * serP / 100;
+  const kdvAmt = (sub + serAmt - indirim) * kdvP / 100;
+  const total = sub + serAmt - indirim + kdvAmt;
+  const prevPaid = currentOrder ? (parseFloat(currentOrder.paid) || 0) : 0;
+  return Math.max(0, total - prevPaid);
+}
+
+function updatePayRemainingInfo() {
+  const infoBox = document.getElementById('payRemainingInfo');
+  const amountEl = document.getElementById('payRemainingAmount');
+  if (!infoBox || !amountEl) return;
+  const prevPaid = currentOrder ? (parseFloat(currentOrder.paid) || 0) : 0;
+  if (prevPaid > 0) {
+    const remaining = getKalanTutar();
+    infoBox.style.display = '';
+    amountEl.textContent = remaining.toFixed(2) + ' ₺';
+  } else {
+    infoBox.style.display = 'none';
+  }
+}
+
+function selectPayMethod(method) {
+  currentPayMethod = method;
+  const btnNakit = document.getElementById('payBtnNakit');
+  const btnKart = document.getElementById('payBtnKart');
+  const mainBtn = document.getElementById('btnPayMain');
+  const amountRow = document.getElementById('nakitAmountRow');
+  const odemeTipi = document.getElementById('odemeTipi');
+
+  updatePayRemainingInfo();
+
+  if (method === 'Nakit') {
+    btnNakit.className = 'pay-type-btn active-nakit';
+    btnKart.className = 'pay-type-btn';
+    mainBtn.className = 'pay-main-btn nakit-mode';
+    mainBtn.innerHTML = '💵 NAKİT ÖDEME AL';
+    if (amountRow) amountRow.style.display = '';
+    if (odemeTipi) odemeTipi.value = 'Nakit';
+  } else {
+    btnNakit.className = 'pay-type-btn';
+    btnKart.className = 'pay-type-btn active-kart';
+    mainBtn.className = 'pay-main-btn kart-mode';
+    const remaining = getKalanTutar();
+    mainBtn.innerHTML = '💳 KART İLE ÖDEME (' + remaining.toFixed(2) + ' ₺)';
+    if (amountRow) amountRow.style.display = 'none';
+    if (odemeTipi) odemeTipi.value = 'Kredi Kartı';
+  }
+}
+
+async function handlePayment() {
+  if (currentPayMethod === 'Kart') {
+    await posOdemeGonder();
+  } else {
+    await odemeAl();
+    // Nakit ödeme sonrası kasa çekmecesini aç
+    openCashDrawer();
+  }
+}
+
+// ── Kasa Çekmecesi Aç (her türlü kasa destekler) ─────────────
+function openCashDrawer() {
+  // Yöntem 1: POS köprüsü bağlıysa oradan aç
+  if (posBridgeOnline) {
+    fetch(posGetUrl() + '/cash-drawer', { method: 'POST', signal: AbortSignal.timeout(5000) }).catch(() => {});
+    return;
+  }
+  // Yöntem 2: ESC/POS komutuyla yazıcıdan kasa aç (gizli iframe ile)
+  try {
+    const escPos = '\x1B\x70\x00\x19\xFA'; // ESC p 0 25 250
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;width:0;height:0;border:none';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write('<pre style="font-family:monospace;font-size:1px">' + escPos + '</pre>');
+    doc.close();
+    iframe.contentWindow.print();
+    setTimeout(() => iframe.remove(), 3000);
+  } catch(e) { /* sessizce geç */ }
+}
+
 async function odemeAl(){
   if(!selectedRoomId){toast(' Masa seçili değil');return}
   if(!currentItems.length){toast(' Sipariş boş');return}
@@ -1792,7 +2130,7 @@ async function odemeAl(){
         document.getElementById('orderItems').innerHTML='<div class="no-table"></div>';
         document.getElementById('orderTotals').style.display='none';
         document.getElementById('paymentArea').style.display='none';
-        document.getElementById('orderNote').value='';
+        const _on=document.getElementById('orderNote'); if(_on) _on.value='';
         toast(`✓ Ödeme tamamlandı (${d.total_paid.toFixed(2)} ₺)`);
         setTimeout(goMasalar, 1200);
       } else {
@@ -1864,6 +2202,7 @@ async function doAddTable(){
       '<div class="tcard-actions" onclick="event.stopPropagation()">'+
         '<button class="tcard-act-btn" onclick="selectAndRename('+d.room.id+',\''+esc(d.room.name)+'\')">✎ Adlandır</button>'+
         '<button class="tcard-act-btn" onclick="toggleMasaDirect('+d.room.id+')">⏻ Aç/Kapat</button>'+
+        '<button class="tcard-act-btn tcard-act-delete" onclick="deleteMasaDirect('+d.room.id+')">🗑</button>'+
       '</div>';
     div.onclick=()=>openMasa(d.room.id,div);
     grid.appendChild(div);
@@ -1892,6 +2231,15 @@ async function doRenameTable(){
 async function toggleMasaDirect(id) {
   const d = await api(`/adisyon/masa/${id}/toggle`, 'POST');
   if (d.success) { updateTableCard(d.room); toast('Masa durumu güncellendi'); }
+}
+
+async function deleteMasaDirect(id) {
+  if (!confirm('Bu masa kalıcı olarak silinsin mi?')) return;
+  await api(`/adisyon/masa/${id}`, 'DELETE');
+  document.querySelector(`.tcard[data-id="${id}"]`)?.remove();
+  resizeGrid();
+  if (selectedRoomId === id) selectedRoomId = null;
+  toast('🗑 Masa silindi');
 }
 
 function selectAndRename(id, name) {
@@ -1940,7 +2288,8 @@ function printFis(){
   const paid    = parseFloat(document.getElementById('alinanTutar').value)||0;
   const eff     = paid > 0 ? paid : total;
   const odeme   = document.getElementById('odemeTipi').value;
-  const note    = document.getElementById('orderNote').value.trim();
+  const _noteEl = document.getElementById('orderNote');
+  const note    = _noteEl ? _noteEl.value.trim() : '';
   const now     = new Date();
   const tarih   = now.toLocaleDateString('tr-TR');
   const saat    = now.toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'});
@@ -2412,7 +2761,9 @@ function debounceSaveNote() {
   clearTimeout(noteTimer);
   noteTimer = setTimeout(async () => {
     if (!selectedRoomId) return;
-    const note = document.getElementById('orderNote').value;
+    const el = document.getElementById('orderNote');
+    if (!el) return;
+    const note = el.value;
     await api(`/adisyon/masa/${selectedRoomId}/note`, 'POST', { note });
   }, 700);
 }
@@ -2886,7 +3237,7 @@ function setPanelSize(v) {
   document.querySelectorAll('.total-row').forEach(el => el.style.fontSize = (0.74 * scale).toFixed(2) + 'rem');
   document.querySelectorAll('.total-row.main').forEach(el => el.style.fontSize = (0.9 * scale).toFixed(2) + 'rem');
   document.querySelectorAll('.payment-area label, .payment-area select, .payment-area input').forEach(el => el.style.fontSize = (0.74 * scale).toFixed(2) + 'rem');
-  document.querySelectorAll('.pbtn, .dbtn').forEach(el => el.style.fontSize = (0.72 * scale).toFixed(2) + 'rem');
+  document.querySelectorAll('.pbtn, .pay-type-btn, .pay-main-btn').forEach(el => el.style.fontSize = (0.72 * scale).toFixed(2) + 'rem');
   const lbl = document.getElementById('panelSizeLabel');
   if (lbl) lbl.textContent = v;
   localStorage.setItem('panelSize', v);
@@ -3012,6 +3363,254 @@ async function deleteGarson(id) {
   } else {
     toast('⚠️ ' + (d.error || 'Silinemedi'));
   }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  PAKET SİPARİŞ YÖNETİMİ
+// ══════════════════════════════════════════════════════════════════
+let paketItems = [];
+let paketFilter = 'active';
+let paketPollTimer = null;
+
+function openPaketSiparis() {
+  showModal('paketSiparis');
+  loadPaketStats();
+  loadPaketOrders();
+  // Ürün listesini doldur
+  const sel = document.getElementById('pktProductSelect');
+  if (sel && sel.options.length <= 1) {
+    document.querySelectorAll('.pcard').forEach(card => {
+      const name = card.querySelector('h4')?.textContent;
+      const price = card.querySelector('.pprice')?.textContent?.replace(/[^\d.,]/g, '').replace(',', '.');
+      const id = card.dataset.id;
+      if (name && price) {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = name + ' — ' + parseFloat(price).toFixed(2) + '₺';
+        opt.dataset.name = name;
+        opt.dataset.price = price;
+        sel.appendChild(opt);
+      }
+    });
+  }
+  clearInterval(paketPollTimer);
+  paketPollTimer = setInterval(() => {
+    if (document.getElementById('modal-paketSiparis')?.classList.contains('open')) {
+      loadPaketStats();
+      loadPaketOrders();
+    } else { clearInterval(paketPollTimer); }
+  }, 15000);
+}
+
+async function loadPaketStats() {
+  try {
+    const d = await api('/paket-siparis/stats');
+    const el = (id) => document.getElementById(id);
+    if (el('pktStatNew')) el('pktStatNew').textContent = d.new || 0;
+    if (el('pktStatPreparing')) el('pktStatPreparing').textContent = d.preparing || 0;
+    if (el('pktStatReady')) el('pktStatReady').textContent = d.ready || 0;
+    if (el('pktStatDelivered')) el('pktStatDelivered').textContent = d.today_delivered || 0;
+    if (el('pktStatTotal')) el('pktStatTotal').textContent = (d.today_total || 0).toFixed(0) + '₺';
+    const badge = document.getElementById('paketBadge');
+    const cnt = (d.new || 0) + (d.preparing || 0) + (d.ready || 0) + (d.on_way || 0);
+    if (badge) { badge.textContent = cnt; badge.style.display = cnt > 0 ? 'flex' : 'none'; }
+  } catch (e) {}
+}
+
+async function loadPaketOrders() {
+  try {
+    const d = await api('/paket-siparis?status=' + paketFilter);
+    renderPaketOrders(d.orders || []);
+  } catch (e) {
+    document.getElementById('paketOrdersList').innerHTML = '<div style="text-align:center;padding:20px;color:var(--red)">Yüklenemedi</div>';
+  }
+}
+
+function filterPaket(status, el) {
+  paketFilter = status;
+  document.querySelectorAll('.pkt-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadPaketOrders();
+}
+
+function renderPaketOrders(orders) {
+  const c = document.getElementById('paketOrdersList');
+  if (!orders.length) { c.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted2);font-size:.8rem">Sipariş bulunamadı</div>'; return; }
+  let h = '';
+  orders.forEach(o => {
+    const items = o.items.map(i =>
+      `<div class="pkt-item-row"><span>${i.quantity}x ${esc(i.name)}${i.note ? ' <small style="color:var(--muted)">(' + esc(i.note) + ')</small>' : ''}</span><span>${i.total.toFixed(2)}₺</span></div>`
+    ).join('');
+
+    let acts = '';
+    if (o.status === 'new') acts = `<button class="pkt-action-btn accept" onclick="pktStatus(${o.id},'preparing')">✓ Kabul Et</button><button class="pkt-action-btn cancel-btn" onclick="pktStatus(${o.id},'cancelled')">İptal</button>`;
+    else if (o.status === 'preparing') acts = `<button class="pkt-action-btn ready-btn" onclick="pktStatus(${o.id},'ready')">✓ Hazır</button><button class="pkt-action-btn cancel-btn" onclick="pktStatus(${o.id},'cancelled')">İptal</button>`;
+    else if (o.status === 'ready') acts = `<button class="pkt-action-btn onway" onclick="pktStatus(${o.id},'on_way')">🚗 Yolda</button><button class="pkt-action-btn deliver" onclick="pktStatus(${o.id},'delivered')">📦 Teslim</button>`;
+    else if (o.status === 'on_way') acts = `<button class="pkt-action-btn deliver" onclick="pktStatus(${o.id},'delivered')">📦 Teslim Edildi</button>`;
+    else acts = `<button class="pkt-action-btn delete-btn" onclick="pktDelete(${o.id})">🗑 Sil</button>`;
+
+    h += `<div class="pkt-card">
+      <div class="pkt-card-head">
+        <span class="pkt-platform ${o.platform}">${esc(o.platform_label)}</span>
+        ${o.platform_order_id ? `<span class="pkt-time">#${esc(o.platform_order_id)}</span>` : ''}
+        <span class="pkt-time">${o.created_at || ''}</span>
+        <span class="pkt-status ${o.status}">${esc(o.status_label)}</span>
+      </div>
+      <div class="pkt-card-body">
+        ${o.customer_name ? `<div class="pkt-customer"><strong>${esc(o.customer_name)}</strong>${o.customer_phone ? ' • ' + esc(o.customer_phone) : ''}</div>` : ''}
+        ${o.customer_address ? `<div class="pkt-customer" style="font-size:.67rem">📍 ${esc(o.customer_address)}</div>` : ''}
+        ${o.customer_note ? `<div class="pkt-customer" style="font-size:.67rem;color:#f59e0b">📝 ${esc(o.customer_note)}</div>` : ''}
+        <div style="margin-top:4px">${items}</div>
+      </div>
+      <div class="pkt-card-footer">
+        <span class="pkt-total">${o.total.toFixed(2)} ₺</span>
+        <div style="margin-left:auto;display:flex;gap:4px">${acts}</div>
+      </div>
+    </div>`;
+  });
+  c.innerHTML = h;
+}
+
+async function pktStatus(id, status) {
+  const msgs = {preparing:'Sipariş kabul edilsin mi?',ready:'Hazır olarak işaretlensin mi?',on_way:'Yolda olarak işaretlensin mi?',delivered:'Teslim edildi mi?',cancelled:'İptal edilsin mi?'};
+  if (!confirm(msgs[status] || 'Emin misiniz?')) return;
+  const d = await api('/paket-siparis/' + id + '/status', 'POST', { status });
+  if (d.success) { toast('✓ Güncellendi'); loadPaketStats(); loadPaketOrders(); }
+  else toast('⚠️ Hata');
+}
+
+async function pktDelete(id) {
+  if (!confirm('Sipariş kalıcı olarak silinsin mi?')) return;
+  const d = await api('/paket-siparis/' + id, 'DELETE');
+  if (d.success) { toast('🗑 Silindi'); loadPaketStats(); loadPaketOrders(); }
+}
+
+// ── Yeni Sipariş Formu ──
+function showNewPaketForm() {
+  paketItems = [];
+  const f = document.getElementById('paketNewForm');
+  f.style.display = '';
+  ['pktCustomerName','pktCustomerPhone','pktCustomerAddress','pktCustomerNote','pktItemName','pktItemPrice'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.getElementById('pktItemQty').value = '1';
+  const sel = document.getElementById('pktProductSelect'); if(sel) sel.value = '';
+  renderPktItems();
+}
+
+function hidePaketForm() { document.getElementById('paketNewForm').style.display = 'none'; }
+
+function pktProductChanged() {
+  const sel = document.getElementById('pktProductSelect');
+  const opt = sel.options[sel.selectedIndex];
+  if (opt && opt.dataset.name) {
+    document.getElementById('pktItemName').value = opt.dataset.name;
+    document.getElementById('pktItemPrice').value = parseFloat(opt.dataset.price).toFixed(2);
+  }
+}
+
+function pktAddItem() {
+  const name = document.getElementById('pktItemName').value.trim();
+  const price = parseFloat(document.getElementById('pktItemPrice').value) || 0;
+  const qty = parseInt(document.getElementById('pktItemQty').value) || 1;
+  if (!name) { toast('Ürün adı girin'); return; }
+  if (price <= 0) { toast('Fiyat girin'); return; }
+  paketItems.push({ name, price, quantity: qty, note: '' });
+  document.getElementById('pktItemName').value = '';
+  document.getElementById('pktItemPrice').value = '';
+  document.getElementById('pktItemQty').value = '1';
+  const sel = document.getElementById('pktProductSelect'); if(sel) sel.value = '';
+  renderPktItems();
+}
+
+function pktRemoveItem(idx) { paketItems.splice(idx, 1); renderPktItems(); }
+
+function renderPktItems() {
+  const box = document.getElementById('pktItemsList');
+  if (!paketItems.length) { box.innerHTML = '<div style="font-size:.72rem;color:var(--muted2);padding:6px 0">Henüz ürün eklenmedi</div>'; return; }
+  let total = 0;
+  box.innerHTML = paketItems.map((it, i) => {
+    const t = it.price * it.quantity; total += t;
+    return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:.72rem">
+      <span style="flex:1">${it.quantity}x ${esc(it.name)}</span>
+      <span style="font-weight:700">${t.toFixed(2)}₺</span>
+      <button onclick="pktRemoveItem(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:.8rem">✕</button>
+    </div>`;
+  }).join('') + `<div style="text-align:right;font-weight:900;font-size:.82rem;padding:6px 0;color:var(--primary)">Toplam: ${total.toFixed(2)} ₺</div>`;
+}
+
+async function submitNewPaket() {
+  if (!paketItems.length) { toast('En az 1 ürün ekleyin'); return; }
+  const d = await api('/paket-siparis', 'POST', {
+    platform: document.getElementById('pktPlatform').value,
+    customer_name: document.getElementById('pktCustomerName').value.trim() || null,
+    customer_phone: document.getElementById('pktCustomerPhone').value.trim() || null,
+    customer_address: document.getElementById('pktCustomerAddress').value.trim() || null,
+    customer_note: document.getElementById('pktCustomerNote').value.trim() || null,
+    payment_method: document.getElementById('pktPaymentMethod').value,
+    items: paketItems,
+  });
+  if (d.success) { toast('✓ Sipariş oluşturuldu'); hidePaketForm(); loadPaketStats(); loadPaketOrders(); }
+  else toast('⚠️ ' + (d.error || d.message || 'Hata'));
+}
+
+// ── Platform Ayarları ──
+async function savePlatformSettings() {
+  const data = {
+    trendyol_supplier_id: document.getElementById('pltTrendyolSupplierId').value.trim(),
+    trendyol_api_key: document.getElementById('pltTrendyolApiKey').value.trim(),
+    trendyol_api_secret: document.getElementById('pltTrendyolApiSecret').value.trim(),
+    ys_restaurant_id: document.getElementById('pltYsRestaurantId').value.trim(),
+    ys_api_key: document.getElementById('pltYsApiKey').value.trim(),
+    ys_api_secret: document.getElementById('pltYsApiSecret').value.trim(),
+    getir_restaurant_id: document.getElementById('pltGetirRestaurantId').value.trim(),
+    getir_api_token: document.getElementById('pltGetirApiToken').value.trim(),
+  };
+  // Boş değerleri null yap, maskelenmiş değerleri gönderme
+  Object.keys(data).forEach(k => {
+    if (!data[k] || data[k].includes('•')) delete data[k];
+  });
+  const d = await api('/paket-siparis/settings', 'POST', data);
+  if (d.success) toast('✓ Platform ayarları kaydedildi');
+  else toast('⚠️ Kaydetme hatası');
+}
+
+async function loadPlatformSettings() {
+  try {
+    if (!document.getElementById('pltTrendyolSupplierId')) return;
+    const d = await api('/paket-siparis/settings');
+    if (d.trendyol_supplier_id) document.getElementById('pltTrendyolSupplierId').value = d.trendyol_supplier_id;
+    if (d.trendyol_api_key) document.getElementById('pltTrendyolApiKey').value = d.trendyol_api_key;
+    if (d.trendyol_api_secret) document.getElementById('pltTrendyolApiSecret').value = d.trendyol_api_secret;
+    if (d.ys_restaurant_id) document.getElementById('pltYsRestaurantId').value = d.ys_restaurant_id;
+    if (d.ys_api_key) document.getElementById('pltYsApiKey').value = d.ys_api_key;
+    if (d.ys_api_secret) document.getElementById('pltYsApiSecret').value = d.ys_api_secret;
+    if (d.getir_restaurant_id) document.getElementById('pltGetirRestaurantId').value = d.getir_restaurant_id;
+    if (d.getir_api_token) document.getElementById('pltGetirApiToken').value = d.getir_api_token;
+  } catch (e) {}
+}
+
+async function testPlatformConn(platform) {
+  const el = document.getElementById('platformTestResult');
+  el.style.display = '';
+  el.style.color = 'var(--muted2)';
+  el.textContent = '🔄 ' + platform + ' bağlantısı test ediliyor...';
+  // Önce ayarları kaydet
+  await savePlatformSettings();
+  const d = await api('/paket-siparis/test-connection', 'POST', { platform });
+  if (d.success) { el.style.color = '#10b981'; el.textContent = '✓ ' + d.message; }
+  else { el.style.color = '#ef4444'; el.textContent = '✕ ' + (d.message || 'Bağlantı hatası'); }
+}
+
+// openSettings'e platform ayarlarını yükle
+const _origOpenSettings2 = openSettings;
+openSettings = function() {
+  _origOpenSettings2();
+  loadPlatformSettings();
+};
+
+// Sayfa yüklendiğinde paket badge'i güncelle
+if (USER_ROLE === 'owner') {
+  loadPaketStats();
+  setInterval(loadPaketStats, 30000);
 }
 
 </script>

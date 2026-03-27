@@ -86,4 +86,29 @@ class User extends Authenticatable
     {
         return $this->hasMany(User::class, 'owner_id');
     }
+
+    // ─── Platform Ayarları (JSON ui_settings içinde) ────────────────
+    public function getSetting(string $key, $default = null)
+    {
+        $settings = json_decode($this->ui_settings ?? '{}', true) ?: [];
+        return $settings[$key] ?? $default;
+    }
+
+    public function setSetting(string $key, $value): void
+    {
+        $settings = json_decode($this->ui_settings ?? '{}', true) ?: [];
+        $settings[$key] = $value;
+        $this->ui_settings = json_encode($settings);
+        $this->save();
+    }
+
+    public function setSettings(array $data): void
+    {
+        $settings = json_decode($this->ui_settings ?? '{}', true) ?: [];
+        foreach ($data as $key => $value) {
+            $settings[$key] = $value;
+        }
+        $this->ui_settings = json_encode($settings);
+        $this->save();
+    }
 }

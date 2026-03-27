@@ -10,6 +10,7 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\WaiterController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\PackageOrderController;
 
 // ── Auth (misafir) ─────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
@@ -127,8 +128,21 @@ Route::get('/menu/{token}', [\App\Http\Controllers\MenuController::class, 'index
             Route::get('/waiters',           [WaiterController::class, 'index'])->name('waiters.index');
             Route::post('/waiters',          [WaiterController::class, 'store'])->name('waiters.store');
             Route::delete('/waiters/{user}', [WaiterController::class, 'destroy'])->name('waiters.destroy');
+
+            // Paket Sipariş Yönetimi
+            Route::get('/paket-siparis',               [PackageOrderController::class, 'index']);
+            Route::post('/paket-siparis',              [PackageOrderController::class, 'store']);
+            Route::get('/paket-siparis/stats',         [PackageOrderController::class, 'stats']);
+            Route::get('/paket-siparis/settings',      [PackageOrderController::class, 'getSettings']);
+            Route::post('/paket-siparis/settings',     [PackageOrderController::class, 'saveSettings']);
+            Route::post('/paket-siparis/test-connection', [PackageOrderController::class, 'testConnection']);
+            Route::post('/paket-siparis/{packageOrder}/status', [PackageOrderController::class, 'updateStatus']);
+            Route::delete('/paket-siparis/{packageOrder}', [PackageOrderController::class, 'destroy']);
         });
 
     }); // end subscribed
 
 }); // end auth
+
+// ── Webhook: Dış platformlardan sipariş al (public) ────────────────
+Route::post('/api/paket-siparis/webhook', [PackageOrderController::class, 'webhook']);

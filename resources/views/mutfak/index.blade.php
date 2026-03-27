@@ -147,6 +147,12 @@
     .statusbar-left{display:flex;align-items:center;gap:8px}
 
     ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#292929;border-radius:5px}::-webkit-scrollbar-track{background:transparent}
+
+    /* Yazdırma gizle — sadece iframe yazdırır */
+    @media print { body{display:none !important} }
+
+    /* Yazıcı butonu */
+    .icon-btn.print-on{border-color:var(--green);color:var(--green)}
   </style>
   @vite(['resources/js/app.js'])
 </head>
@@ -166,6 +172,7 @@
     <span class="badge-count @if(count($orders)==0) zero @endif" id="orderCount">
       {{ count($orders) }} Siparis
     </span>
+    <button class="icon-btn" id="btnPrint" title="Otomatik Fiş Yazdır">🖨️</button>
     <button class="icon-btn" id="btnSound" title="Ses">🔊</button>
     <button class="icon-btn" id="btnFull" title="Tam Ekran">⛶</button>
     <button class="icon-btn" onclick="location.reload()" title="Yenile">↺</button>
@@ -249,6 +256,8 @@ const READY    = '{{ route("mutfak.mark-ready") }}';
 const USER_ID  = {{ auth()->id() }};
 
 let soundOn = localStorage.getItem('mutfak_sound') !== '0';
+let autoPrint = localStorage.getItem('mutfak_autoprint') === '1';
+let printedIds = new Set(); // yazdırılmış sipariş id'leri (tekrar basılmasın)
 
 // TTS ses listesini önceden yükle (bazı tarayıcılar ilk çağrıda boş döner)
 if (window.speechSynthesis) {
@@ -261,6 +270,7 @@ let pendingCounts = {};
 document.querySelectorAll('[data-order-id]').forEach(el => {
   const id = +el.dataset.orderId;
   knownIds.add(id);
+  printedIds.add(id); // sayfa açılışında zaten var olanları yazdırma
   pendingCounts[id] = el.querySelectorAll('.item-row:not(.ready-row)').length;
 });
 
@@ -271,6 +281,15 @@ btnSound.onclick = () => {
   soundOn = !soundOn;
   localStorage.setItem('mutfak_sound', soundOn ? '1' : '0');
   btnSound.textContent = soundOn ? '🔊' : '🔇';
+};
+
+// Auto Print
+const btnPrint = document.getElementById('btnPrint');
+btnPrint.classList.toggle('print-on', autoPrint);
+btnPrint.onclick = () => {
+  autoPrint = !autoPrint;
+  localStorage.setItem('mutfak_autoprint', autoPrint ? '1' : '0');
+  btnPrint.classList.toggle('print-on', autoPrint);
 };
 
 // Fullscreen
@@ -358,12 +377,18 @@ function buildCard(o) {
 
 function renderGrid(orders) {
   let hasNew = false;
+  let newOrders = []; // otomatik yazdırma için yeni siparişler
   orders.forEach(o => {
     const pending = o.items.filter(i => i.status === 'pending').length;
-    if (!knownIds.has(o.id)) hasNew = true;
+    if (!knownIds.has(o.id)) { hasNew = true; if (!printedIds.has(o.id)) newOrders.push(o); }
     else if ((pendingCounts[o.id] ?? 0) < pending) hasNew = true;
   });
   if (hasNew) beep();
+
+  // Yeni siparişleri otomatik yazdır
+  if (autoPrint && newOrders.length > 0) {
+    newOrders.forEach(o => { printedIds.add(o.id); printKitchenOrder(o); });
+  }
 
   knownIds = new Set(orders.map(o => o.id));
   pendingCounts = {};
@@ -470,6 +495,93 @@ async function poll() {
     document.getElementById('statusBar').textContent = 'Baglanti hatasi — yeniden deneniyor...';
     document.getElementById('liveText').textContent = 'Baglanamadi';
   }
+}
+
+// ── Mutfak Fiş Yazdırma ───────────────────────────────────────────
+let printQueue = [];
+let isPrinting = false;
+
+function buildKitchenReceipt(order) {
+  const now   = new Date();
+  const tarih = now.toLocaleDateString('tr-TR');
+  const saat  = now.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+
+  let itemsHtml = '';
+  order.items.forEach(i => {
+    const q = i.qty % 1 === 0 ? i.qty : parseFloat(i.qty).toFixed(1);
+    itemsHtml += `<div class="k-item">
+      <span class="k-qty">${q}x</span>
+      <span class="k-name">${esc(i.name)}</span>
+    </div>`;
+    if (i.cat) itemsHtml += `<div class="k-cat">${esc(i.cat)}</div>`;
+    if (i.note) itemsHtml += `<div class="k-note">⚠ ${esc(i.note)}</div>`;
+  });
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Mutfak Fiş</title>
+<style>
+  @media print{body{margin:0}@page{margin:0 2mm 4mm}}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Courier New',Courier,monospace;font-size:13px;line-height:1.5;width:72mm;margin:0 auto;padding:4mm 3mm 6mm;color:#000;background:#fff}
+  .center{text-align:center}
+  .bold{font-weight:bold}
+  .big{font-size:18px;font-weight:900;letter-spacing:1px}
+  .dashed{border:none;border-top:1px dashed #555;margin:5px 0}
+  .solid{border:none;border-top:2px solid #000;margin:5px 0}
+  .table-name{font-size:22px;font-weight:900;text-align:center;margin:4px 0;letter-spacing:1px}
+  .meta{font-size:11px;text-align:center;color:#333}
+  .k-item{display:flex;align-items:baseline;gap:6px;padding:4px 0 1px;font-weight:700;font-size:14px}
+  .k-qty{min-width:28px;font-weight:900;font-size:15px}
+  .k-name{flex:1}
+  .k-cat{font-size:10px;color:#555;padding:0 0 2px 34px}
+  .k-note{font-size:11px;color:#000;font-weight:700;padding:0 0 4px 34px;font-style:italic}
+  .count{text-align:center;font-size:12px;font-weight:700;margin-top:4px}
+  .footer{text-align:center;font-size:10px;color:#666;margin-top:6px}
+</style></head><body>
+
+<div class="center big">🍳 MUTFAK FİŞİ</div>
+<hr class="solid">
+<div class="table-name">${esc(order.name)}</div>
+<div class="meta">${tarih} &nbsp; ${saat} &nbsp; | &nbsp; Sipariş #${order.id}</div>
+<hr class="dashed">
+${itemsHtml}
+<hr class="solid">
+<div class="count">Toplam ${order.items.length} kalem</div>
+<div class="footer">--- otomatik mutfak fişi ---</div>
+
+</body></html>`;
+}
+
+function printKitchenOrder(order) {
+  printQueue.push(order);
+  processQueue();
+}
+
+function processQueue() {
+  if (isPrinting || printQueue.length === 0) return;
+  isPrinting = true;
+  const order = printQueue.shift();
+
+  let iframe = document.getElementById('printFrame');
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.id = 'printFrame';
+    iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:72mm;height:0;border:none;visibility:hidden';
+    document.body.appendChild(iframe);
+  }
+
+  const html = buildKitchenReceipt(order);
+  const doc  = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  // Yazdırma için kısa gecikme
+  setTimeout(() => {
+    try { iframe.contentWindow.print(); } catch(e) { console.warn('Yazdırma hatası:', e); }
+    // Bir sonraki fişi yazdırmadan önce kısa bekleme
+    setTimeout(() => { isPrinting = false; processQueue(); }, 1200);
+  }, 400);
 }
 
 // ── WebSocket ile gerçek zamanlı güncelleme ────────────────────────

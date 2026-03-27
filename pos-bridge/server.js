@@ -294,6 +294,41 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // ─── Kasa Çekmecesi Aç ──────────────
+  if (url === '/cash-drawer' && req.method === 'POST') {
+    console.log('[POS] Kasa çekmecesi açılıyor...');
+    // ESC/POS cash drawer kick command: ESC p 0 25 250
+    const drawerCmd = Buffer.from([0x1B, 0x70, 0x00, 0x19, 0xFA]);
+    try {
+      if (config.mode === 'tcp') {
+        await new Promise((resolve, reject) => {
+          const client = new net.Socket();
+          client.connect(config.tcp.port, config.tcp.host, () => {
+            client.write(drawerCmd, () => { client.destroy(); resolve(); });
+          });
+          client.on('error', (err) => reject(err));
+          setTimeout(() => { client.destroy(); resolve(); }, 3000);
+        });
+      } else {
+        const { SerialPort } = require('serialport');
+        await new Promise((resolve, reject) => {
+          const port = new SerialPort({ path: config.serial.path, baudRate: config.serial.baudRate, autoOpen: false });
+          port.open((err) => {
+            if (err) return reject(err);
+            port.write(drawerCmd, () => { setTimeout(() => { port.close(); resolve(); }, 500); });
+          });
+          port.on('error', reject);
+        });
+      }
+      res.writeHead(200);
+      return res.end(JSON.stringify({ success: true, message: 'Kasa çekmecesi açıldı' }));
+    } catch (err) {
+      console.error('[POS] Kasa çekmecesi hatası:', err.message);
+      res.writeHead(500);
+      return res.end(JSON.stringify({ success: false, message: err.message }));
+    }
+  }
+
   // ─── Test (simülasyon) ─────────────
   if (url === '/test' && req.method === 'POST') {
     const body = await readBody(req);
