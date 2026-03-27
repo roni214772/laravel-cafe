@@ -2084,24 +2084,10 @@ async function handlePayment() {
 
 // ── Kasa Çekmecesi Aç (her türlü kasa destekler) ─────────────
 function openCashDrawer() {
-  // Yöntem 1: POS köprüsü bağlıysa oradan aç
+  // POS köprüsü bağlıysa kasa çekmecesini aç
   if (posBridgeOnline) {
     fetch(posGetUrl() + '/cash-drawer', { method: 'POST', signal: AbortSignal.timeout(5000) }).catch(() => {});
-    return;
   }
-  // Yöntem 2: ESC/POS komutuyla yazıcıdan kasa aç (gizli iframe ile)
-  try {
-    const escPos = '\x1B\x70\x00\x19\xFA'; // ESC p 0 25 250
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:-9999px;width:0;height:0;border:none';
-    document.body.appendChild(iframe);
-    const doc = iframe.contentDocument || iframe.contentWindow.document;
-    doc.open();
-    doc.write('<pre style="font-family:monospace;font-size:1px">' + escPos + '</pre>');
-    doc.close();
-    iframe.contentWindow.print();
-    setTimeout(() => iframe.remove(), 3000);
-  } catch(e) { /* sessizce geç */ }
 }
 
 async function odemeAl(){
