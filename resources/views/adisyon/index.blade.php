@@ -3696,7 +3696,7 @@ async function importSelectedProducts() {
     const d = await api('/products/import-menu', 'POST', { items: selected });
     if (d.success) {
       toast('✓ ' + d.message);
-      loadProducts();
+      loadUrunler();
       // Temizle
       document.getElementById('scrapeMenuResult').style.display = 'none';
       document.getElementById('scrapeMenuUrl').value = '';
