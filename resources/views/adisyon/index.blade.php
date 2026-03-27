@@ -2109,6 +2109,8 @@ async function odemeAl(){
     });
     if(d.success){
       updateTableCard(d.room);
+      // Ödeme başarılı — fişi otomatik yazdır (items temizlenmeden önce)
+      printFis();
       document.getElementById('alinanTutar').value='';
       if(d.closed){
         // Tamamen ödendi — masa kapandı
