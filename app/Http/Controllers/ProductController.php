@@ -115,6 +115,7 @@ class ProductController extends Controller
     {
         $request->validate(['url' => 'required|url|max:500']);
         $url = $request->url;
+        $baseUrl = rtrim(parse_url($url, PHP_URL_SCHEME) . '://' . parse_url($url, PHP_URL_HOST), '/');
 
         try {
             $response = Http::timeout(15)->withHeaders([
@@ -151,7 +152,9 @@ class ProductController extends Controller
                                         $price = 0;
                                         if (isset($mi['offers']['price'])) $price = (float)$mi['offers']['price'];
                                         elseif (isset($mi['offers'][0]['price'])) $price = (float)$mi['offers'][0]['price'];
-                                        $items[] = ['name' => $mi['name'] ?? '', 'price' => $price, 'category' => $cat];
+                                        $image = $mi['image'] ?? ($mi['image'][0] ?? null);
+                                        if (is_array($image)) $image = $image['url'] ?? ($image[0] ?? null);
+                                        $items[] = ['name' => $mi['name'] ?? '', 'price' => $price, 'category' => $cat, 'image' => $image];
                                     }
                                 }
                             }
@@ -162,8 +165,16 @@ class ProductController extends Controller
 
             // 2) JSON-LD bulamadıysa HTML'den çıkar
             if (empty($items)) {
-                $items = $this->parseHtmlMenu($html);
+                $items = $this->parseHtmlMenu($html, $baseUrl);
             }
+
+            // Relative URL'leri absolute yap
+            foreach ($items as &$item) {
+                if (!empty($item['image']) && !str_starts_with($item['image'], 'http')) {
+                    $item['image'] = $baseUrl . '/' . ltrim($item['image'], '/');
+                }
+            }
+            unset($item);
 
             // Boş isimleri filtrele ve tekrarları kaldır
             $items = collect($items)
@@ -193,6 +204,7 @@ class ProductController extends Controller
             'items.*.name'   => 'required|string|max:100',
             'items.*.price'  => 'required|numeric|min:0',
             'items.*.category' => 'nullable|string|max:60',
+            'items.*.image'    => 'nullable|url|max:500',
         ]);
 
         $userId = auth()->id();
@@ -215,10 +227,11 @@ class ProductController extends Controller
             }
 
             Product::create([
-                'user_id'  => $userId,
-                'name'     => $name,
-                'price'    => $price,
-                'category' => $category,
+                'user_id'   => $userId,
+                'name'      => $name,
+                'price'     => $price,
+                'category'  => $category,
+                'image_url' => !empty($item['image']) ? $item['image'] : null,
             ]);
 
             // Kategori yoksa oluştur
@@ -240,7 +253,7 @@ class ProductController extends Controller
     /**
      * HTML'den menü ürünlerini çıkar (genel pattern'ler)
      */
-    private function parseHtmlMenu(string $html): array
+    private function parseHtmlMenu(string $html, string $baseUrl = ''): array
     {
         $items = [];
         $doc = new \DOMDocument();
@@ -299,8 +312,16 @@ class ProductController extends Controller
                     $parent = $parent->parentNode;
                 }
 
+                // Görsel bul
+                $image = '';
+                $imgNodes = $xpath->query('.//img', $card);
+                if ($imgNodes && $imgNodes->length > 0) {
+                    $img = $imgNodes->item(0);
+                    $image = $img->getAttribute('src') ?: $img->getAttribute('data-src') ?: $img->getAttribute('data-lazy-src') ?: '';
+                }
+
                 if ($name) {
-                    $items[] = ['name' => $name, 'price' => $price, 'category' => $category];
+                    $items[] = ['name' => $name, 'price' => $price, 'category' => $category, 'image' => $image];
                 }
             }
         }
@@ -313,7 +334,7 @@ class ProductController extends Controller
                     $name  = trim($m[1]);
                     $price = (float)str_replace(',', '.', $m[2]);
                     if (mb_strlen($name) >= 2 && mb_strlen($name) <= 80 && $price > 0) {
-                        $items[] = ['name' => $name, 'price' => $price, 'category' => ''];
+                        $items[] = ['name' => $name, 'price' => $price, 'category' => '', 'image' => ''];
                     }
                 }
             }

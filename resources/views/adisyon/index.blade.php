@@ -1488,6 +1488,7 @@
             <thead>
               <tr style="background:var(--s2);position:sticky;top:0">
                 <th style="padding:5px;text-align:center;width:30px"><input type="checkbox" id="scrapeSelectAll" onchange="toggleScrapeSelectAll()" checked></th>
+                <th style="padding:5px;text-align:center;width:40px">Görsel</th>
                 <th style="padding:5px;text-align:left">Ürün Adı</th>
                 <th style="padding:5px;text-align:right">Fiyat</th>
                 <th style="padding:5px;text-align:left">Kategori</th>
@@ -3655,6 +3656,7 @@ async function scrapeMenuUrl() {
     tbody.innerHTML = scrapedItems.map((item, i) => `
       <tr style="border-bottom:1px solid var(--border)">
         <td style="padding:4px;text-align:center"><input type="checkbox" class="scrape-check" data-idx="${i}" checked></td>
+        <td style="padding:4px;text-align:center">${item.image ? `<img src="${esc(item.image)}" style="width:32px;height:32px;object-fit:cover;border-radius:4px" onerror="this.style.display='none'">` : '<span style="color:var(--muted2)">—</span>'}</td>
         <td style="padding:4px">${esc(item.name)}</td>
         <td style="padding:4px;text-align:right;white-space:nowrap">${item.price > 0 ? item.price.toFixed(2) + ' ₺' : '-'}</td>
         <td style="padding:4px;font-size:.62rem;color:var(--muted2)">${esc(item.category || '')}</td>
