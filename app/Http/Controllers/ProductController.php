@@ -118,7 +118,8 @@ class ProductController extends Controller
         $baseUrl = rtrim(parse_url($url, PHP_URL_SCHEME) . '://' . parse_url($url, PHP_URL_HOST), '/');
 
         try {
-            $response = Http::timeout(15)->withHeaders([
+            // 1. Doğrudan HTML çek
+            $response = Http::withoutVerifying()->timeout(15)->withHeaders([
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'Accept'     => 'text/html,application/xhtml+xml,application/json',
             ])->get($url);
@@ -130,7 +131,7 @@ class ProductController extends Controller
             $html = $response->body();
             $items = [];
 
-            // 1) JSON-LD yapısal veri dene (en güvenilir)
+            // 2. JSON-LD yapısal veri dene (en güvenilir)
             if (preg_match_all('/<script[^>]*type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/si', $html, $jsonMatches)) {
                 foreach ($jsonMatches[1] as $json) {
                     $data = json_decode(trim($json), true);
@@ -163,9 +164,14 @@ class ProductController extends Controller
                 }
             }
 
-            // 2) JSON-LD bulamadıysa HTML'den çıkar
+            // 3. JSON-LD bulamadıysa HTML'den çıkar
             if (empty($items)) {
                 $items = $this->parseHtmlMenu($html, $baseUrl);
+            }
+
+            // 4. HTML'den de bulamadıysa SPA olabilir — Jina Reader ile render et
+            if (empty($items)) {
+                $items = $this->scrapeViaSpaRenderer($url, $baseUrl);
             }
 
             // Relative URL'leri absolute yap
@@ -191,6 +197,106 @@ class ProductController extends Controller
 
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Sayfa yüklenemedi: ' . $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * SPA sayfalarını Jina Reader ile render edip ürün çıkar
+     */
+    private function scrapeViaSpaRenderer(string $url, string $baseUrl): array
+    {
+        try {
+            // Jina Reader: JavaScript render eder ve markdown olarak döndürür (ücretsiz)
+            $rendered = Http::withoutVerifying()->timeout(30)->withHeaders([
+                'Accept' => 'text/plain',
+            ])->get('https://r.jina.ai/' . $url);
+
+            if (!$rendered->successful()) return [];
+
+            $text = $rendered->body();
+            $items = [];
+            $currentCategory = '';
+
+            // Markdown formatında "## KATEGORİ" başlıkları ve "₺430.00 ÜRÜN ADI" pattern'leri
+            $lines = explode("\n", $text);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (empty($line)) continue;
+
+                // Kategori başlığı: ## KATEGORİ ADI veya # KATEGORİ ADI
+                if (preg_match('/^#{1,4}\s+(.+)$/', $line, $m)) {
+                    $cat = trim($m[1]);
+                    // Navigasyon/header öğelerini atla
+                    if (mb_strlen($cat) <= 40 && !preg_match('/menu|ana\s*sayfa|footer|header|nav|cookie|gizlilik|iletişim/iu', $cat)) {
+                        $currentCategory = $cat;
+                    }
+                    continue;
+                }
+
+                // Fiyat pattern'leri: "₺430.00 ÜRÜN ADI" veya "ÜRÜN ADI ₺430.00" veya "430,00 ₺"
+                $name = '';
+                $price = 0;
+
+                // ₺XXX.XX ÜRÜN_ADI
+                if (preg_match('/₺\s*(\d+[\.,]?\d*)\s+(.+)/u', $line, $m)) {
+                    $price = (float)str_replace(',', '.', $m[1]);
+                    $name = trim($m[2]);
+                }
+                // ÜRÜN_ADI ₺XXX.XX veya ÜRÜN_ADI XXX,XX ₺ veya ÜRÜN_ADI XXX TL
+                elseif (preg_match('/^(.+?)\s+₺?\s*(\d+[\.,]?\d*)\s*(?:₺|TL)?$/u', $line, $m)) {
+                    $name = trim($m[1]);
+                    $price = (float)str_replace(',', '.', $m[2]);
+                }
+                // XXX.XX₺ veya XXX,XX₺ (yapışık)
+                elseif (preg_match('/(\d+[\.,]\d+)₺\s+(.+)/u', $line, $m)) {
+                    $price = (float)str_replace(',', '.', $m[1]);
+                    $name = trim($m[2]);
+                }
+
+                // Görsel URL'si — aynı veya önceki/sonraki satırda olabilir
+                $image = '';
+                if (preg_match('/!\[.*?\]\((https?:\/\/[^\s\)]+)\)/', $line, $imgM)) {
+                    $image = $imgM[1];
+                }
+
+                if ($name && $price > 0) {
+                    // İsimden markdown/gereksiz karakterleri temizle
+                    $name = preg_replace('/\[.*?\]\(.*?\)/', '', $name); // markdown linkleri
+                    $name = preg_replace('/!\[.*?\]\(.*?\)/', '', $name); // markdown görselleri
+                    $name = trim(preg_replace('/[*_`#\[\]]+/', '', $name)); // markdown formatları
+                    $name = preg_replace('/\s{2,}/', ' ', $name);
+                    $name = rtrim($name, ' .');
+
+                    if (mb_strlen($name) >= 2 && mb_strlen($name) <= 80) {
+                        $items[] = [
+                            'name'     => $name,
+                            'price'    => $price,
+                            'category' => $currentCategory,
+                            'image'    => $image,
+                        ];
+                    }
+                }
+            }
+
+            // Görselleri ürünlerle eşleştirmeye çalış (markdown'da görsel ayrı satırda olabilir)
+            if (!empty($items)) {
+                $allImages = [];
+                if (preg_match_all('/!\[.*?\]\((https?:\/\/[^\s\)]+(?:\.png|\.jpg|\.jpeg|\.webp)[^\s\)]*)\)/i', $text, $imgMatches)) {
+                    $allImages = $imgMatches[1];
+                }
+                $imgIdx = 0;
+                foreach ($items as &$item) {
+                    if (empty($item['image']) && isset($allImages[$imgIdx])) {
+                        $item['image'] = $allImages[$imgIdx];
+                    }
+                    $imgIdx++;
+                }
+                unset($item);
+            }
+
+            return $items;
+        } catch (\Exception $e) {
+            return [];
         }
     }
 

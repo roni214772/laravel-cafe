@@ -3637,13 +3637,19 @@ async function scrapeMenuUrl() {
   if (!url) { toast('⚠️ Lütfen bir URL girin'); return; }
   const btn = document.getElementById('btnScrapeMenu');
   btn.disabled = true;
-  btn.textContent = '⏳ Çekiliyor...';
+  btn.textContent = '⏳ Çekiliyor (30sn sürebilir)...';
   const resultDiv = document.getElementById('scrapeMenuResult');
   const statusDiv = document.getElementById('scrapeMenuStatus');
   resultDiv.style.display = 'none';
 
   try {
-    const d = await api('/products/scrape-menu', 'POST', { url });
+    const resp = await fetch('/products/scrape-menu', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept':'application/json'},
+      body: JSON.stringify({url}),
+      signal: AbortSignal.timeout(60000)
+    });
+    const d = await resp.json();
     if (!d.success) {
       toast('⚠️ ' + (d.error || 'Ürün çekilemedi'));
       btn.disabled = false;
