@@ -2152,11 +2152,10 @@ async function odemeAl(){
     });
     if(d.success){
       updateTableCard(d.room);
-      // Ödeme başarılı — fişi otomatik yazdır (items temizlenmeden önce)
-      printFis();
       document.getElementById('alinanTutar').value='';
       if(d.closed){
-        // Tamamen ödendi — masa kapandı
+        // Tamamen ödendi — fişi yazdır ve masayı kapat
+        printFis();
         currentItems=[];currentOrder=null;
         document.getElementById('orderItems').innerHTML='<div class="no-table"></div>';
         document.getElementById('orderTotals').style.display='none';
