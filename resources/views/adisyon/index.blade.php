@@ -418,9 +418,18 @@
     .search-wrap .sico{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.78rem}
     .tool-btn{padding:6px 11px;background:var(--s2);border:1px solid var(--border);color:var(--muted2);border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;text-decoration:none}
     .tool-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-dim)}
-    .cat-tabs{display:flex;gap:5px;padding:7px 10px;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;overflow-x:auto}
+    .cat-tabs-wrapper{position:relative;flex-shrink:0;border-bottom:1px solid var(--border)}
+    .cat-toggle{display:none;width:100%;padding:8px 12px;background:var(--s1);border:none;color:var(--text);font-size:.78rem;font-weight:700;cursor:pointer;text-align:left;align-items:center;justify-content:space-between}
+    .cat-toggle .cat-toggle-icon{transition:transform .2s;font-size:.65rem}
+    .cat-toggle.open .cat-toggle-icon{transform:rotate(180deg)}
+    .cat-tabs{display:flex;gap:5px;padding:7px 10px;flex-wrap:wrap;flex-shrink:0;overflow-x:auto}
     .ctab{padding:4px 12px;border-radius:999px;font-size:.72rem;font-weight:700;border:1px solid var(--border);background:transparent;color:var(--muted2);cursor:pointer;transition:all .14s;white-space:nowrap}
     .ctab:hover,.ctab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+    @media(max-width:768px){
+      .cat-toggle{display:flex}
+      .cat-tabs{display:none;padding:5px 10px}
+      .cat-tabs.cat-open{display:flex}
+    }
     .prod-scroll{flex:1;overflow-y:auto;padding:10px}
     .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--card-w,128px),1fr));gap:5px}
     .pcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:9px 10px;cursor:pointer;transition:all .15s}
@@ -888,11 +897,17 @@
         </div>
         <button class="tool-btn" onclick="openUrunler()" @if(($userRole ?? 'owner') !== 'owner') style="display:none" @endif>+ Ürün</button>
       </div>
-      <div class="cat-tabs" id="catTabs">
-        <button class="ctab active" data-cat="all" onclick="filterCat('all',this)">Tümü</button>
-        @foreach($products->keys() as $kat)
-          <button class="ctab" data-cat="{{ $kat }}" onclick="filterCat('{{ addslashes($kat) }}',this)">{{ $kat ?: 'Genel' }}</button>
-        @endforeach
+      <div class="cat-tabs-wrapper">
+        <button class="cat-toggle" id="catToggle" onclick="toggleCatTabs()">
+          <span id="catToggleLabel">Kategoriler: Tümü</span>
+          <span class="cat-toggle-icon">▼</span>
+        </button>
+        <div class="cat-tabs" id="catTabs">
+          <button class="ctab active" data-cat="all" onclick="filterCat('all',this)">Tümü</button>
+          @foreach($products->keys() as $kat)
+            <button class="ctab" data-cat="{{ $kat }}" onclick="filterCat('{{ addslashes($kat) }}',this)">{{ $kat ?: 'Genel' }}</button>
+          @endforeach
+        </div>
       </div>
       <div class="prod-scroll">
         <div id="prodContainer">
@@ -2270,6 +2285,23 @@ function filterCat(cat,el){
   el.classList.add('active');
   document.querySelectorAll('.pcard').forEach(c=>{c.style.display=(cat==='all'||c.dataset.cat===cat)?'':('none')});
   document.getElementById('prodSearch').value='';
+  updateCatToggleLabel();
+  // close panel on mobile after selection
+  const tabs=document.getElementById('catTabs');
+  const toggle=document.getElementById('catToggle');
+  tabs.classList.remove('cat-open');
+  toggle.classList.remove('open');
+}
+function toggleCatTabs(){
+  const tabs=document.getElementById('catTabs');
+  const toggle=document.getElementById('catToggle');
+  tabs.classList.toggle('cat-open');
+  toggle.classList.toggle('open');
+}
+function updateCatToggleLabel(){
+  const active=document.querySelector('.ctab.active');
+  const label=document.getElementById('catToggleLabel');
+  if(active&&label) label.textContent='Kategoriler: '+(active.textContent||'Tümü');
 }
 function filterProds(){
   const q=document.getElementById('prodSearch').value.toLowerCase();
@@ -2755,6 +2787,7 @@ async function refreshProdGrid() {
   const tabsEl = document.getElementById('catTabs');
   tabsEl.innerHTML = `<button class="ctab active" data-cat="all" onclick="filterCat('all',this)">Tümü</button>` +
     cats.map(c => `<button class="ctab" data-cat="${esc(c)}" onclick="filterCat('${esc(c).replace(/'/g,"\\'")}'  ,this)">${esc(c)||'Genel'}</button>`).join('');
+  updateCatToggleLabel();
   // rebuild product grid
   const container = document.getElementById('prodContainer');
   if (!prods.length) { container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--muted)"><p>Ürün yok.</p></div>'; return; }
