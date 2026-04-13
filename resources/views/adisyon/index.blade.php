@@ -752,7 +752,7 @@
   <div class="topbar-spacer"></div>
   <div class="topbar-right">
     
-    <a href="/mutfak" target="_blank" class="tb-btn mob-hide">Mutfak</a>
+    <a href="/mutfak" class="tb-btn mob-hide">Mutfak</a>
     <button class="tb-btn primary" id="btnAddTable" onclick="showModal('addTable')">+ Masa</button>
     <div class="topbar-div mob-hide"></div>
     @if(($userRole ?? 'owner') === 'owner')
@@ -777,7 +777,7 @@
     <div class="mob-only mob-menu-wrap">
       <button class="tb-btn" onclick="toggleMobMenu(event)" title="Menü" id="btnMobMenu">&#8942;</button>
       <div class="mob-dropdown" id="mobDropdown">
-        <a href="/mutfak" target="_blank" class="mob-dd-item"><span class="mob-dd-icon">🍳</span>Mutfak</a>
+        <a href="/mutfak" class="mob-dd-item"><span class="mob-dd-icon">🍳</span>Mutfak</a>
         @if(($userRole ?? 'owner') === 'owner')
         <button class="mob-dd-item" onclick="closeMobMenu();openUrunler()"><span class="mob-dd-icon">🛒</span>Ürünler</button>
         <button class="mob-dd-item" onclick="closeMobMenu();openRapor()"><span class="mob-dd-icon">📊</span>Rapor</button>

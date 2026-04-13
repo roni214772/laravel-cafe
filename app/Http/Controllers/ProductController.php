@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
+use App\Services\ImageOptimizer;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -92,13 +93,18 @@ class ProductController extends Controller
             }
             return null;
         }
-        // File upload takes priority — use 'public' disk so files land in storage/app/public/
+        // File upload takes priority — optimize + WebP + thumbnail
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             if ($existing && str_starts_with($existing, '/storage/')) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $existing));
+                $oldPath = str_replace('/storage/', '', $existing);
+                Storage::disk('public')->delete($oldPath);
+                // Eski thumbnail'ı da sil
+                $oldDir  = dirname($oldPath);
+                $oldName = basename($oldPath);
+                Storage::disk('public')->delete($oldDir . '/thumb_' . $oldName);
             }
-            $path = $request->file('image')->store('products', 'public');
-            return '/storage/' . $path;
+            $result = ImageOptimizer::optimizeAndStore($request->file('image'), 'products');
+            return $result['main'];
         }
         // Explicit URL provided
         if ($request->filled('image_url')) {
