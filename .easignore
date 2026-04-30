@@ -1,0 +1,5 @@
+# Exclude laravel project and other non-expo files from EAS build
+laravel-cafe/
+Cafe POS Baslat.lnk
+generate-icons.js
+node_modules/
