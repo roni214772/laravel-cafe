@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "dcea4a59-9c01-4484-9c11-e9fbf060625a"
+      }
+    },
+    "android": {
+      "package": "com.caffepro.pos"
+    }
+  }
+}
