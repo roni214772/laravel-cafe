@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, BackHandler, ActivityIndicator, Platform } from 'react-native';
+import { StyleSheet, View, BackHandler, ActivityIndicator, Platform, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useEffect } from 'react';
 import Constants from 'expo-constants';
@@ -21,6 +21,7 @@ export default function App() {
   const webViewRef = useRef(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [loading, setLoading] = useState(true);
+  const lastUrlRef = useRef('');
   const notificationListener = useRef();
   const responseListener = useRef();
 
@@ -75,8 +76,39 @@ export default function App() {
         ref={webViewRef}
         source={{ uri: SITE_URL }}
         style={styles.webview}
-        onNavigationStateChange={(navState) => setCanGoBack(navState.canGoBack)}
+        onNavigationStateChange={(navState) => {
+          setCanGoBack(navState.canGoBack);
+          if (!navState.loading && navState.url) {
+            lastUrlRef.current = navState.url;
+          }
+        }}
         onLoadEnd={() => setLoading(false)}
+        injectedJavaScript={`
+          (function() {
+            var error = document.querySelector('.error');
+            var path = window.location.pathname;
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'pageInfo',
+              path: path,
+              error: error ? error.innerText.trim() : null
+            }));
+          })();
+          true;
+        `}
+        onMessage={(event) => {
+          try {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (data.type === 'pageInfo') {
+              if (data.error) {
+                Alert.alert('Giriş Hatası', data.error);
+              } else if (data.path === '/subscription/select') {
+                Alert.alert('Abonelik Gerekli', 'Hesabınızın aboneliği aktif değil. Lütfen abonelik satın alın.');
+              } else if (data.path === '/subscription/pending') {
+                Alert.alert('Abonelik Bekleniyor', 'Abonelik talebiniz inceleniyor, lütfen bekleyin.');
+              }
+            }
+          } catch (e) {}
+        }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         thirdPartyCookiesEnabled={true}
