@@ -32,7 +32,7 @@ class ProductController extends Controller
         $imageUrl = $this->handleImage($request, null);
 
         $product = Product::create([
-            'user_id'   => auth()->id(),
+            'user_id'   => auth()->user()->effectiveOwnerId(),
             'name'      => $request->name,
             'price'     => $request->price,
             'category'  => $request->category ?? '',
@@ -43,7 +43,7 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
-        if ($product->user_id !== auth()->id()) abort(403);
+        if ($product->user_id !== auth()->user()->effectiveOwnerId()) abort(403);
         $request->validate([
             'name'      => 'required|string|max:100',
             'price'     => 'required|numeric|min:0',
@@ -65,7 +65,7 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
-        if ($product->user_id !== auth()->id()) abort(403);
+        if ($product->user_id !== auth()->user()->effectiveOwnerId()) abort(403);
         try {
             if ($product->image_url && str_starts_with($product->image_url, '/storage/')) {
                 Storage::disk('public')->delete(str_replace('/storage/', '', $product->image_url));
@@ -464,7 +464,7 @@ class ProductController extends Controller
             'items.*.image'    => 'nullable|url|max:500',
         ]);
 
-        $userId = auth()->id();
+        $userId = auth()->user()->effectiveOwnerId();
         $imported = 0;
         $skipped  = 0;
 
