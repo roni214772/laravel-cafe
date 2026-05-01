@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'subscribed'   => \App\Http\Middleware\SubscriptionActive::class,
             'owner'        => \App\Http\Middleware\OwnerOnly::class,
         ]);
+        $middleware->validateCsrfTokens(except: [
+            'deploy',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
