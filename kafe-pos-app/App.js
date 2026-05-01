@@ -25,38 +25,17 @@ export default function App() {
   const notificationListener = useRef();
   const responseListener = useRef();
 
+  // Bildirimler sadece bir kez kurulur
   useEffect(() => {
-    // Push notification setup
     registerForPushNotifications();
 
-    // Notification listener (bildirim geldi)
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
       console.log('📬 Bildirim alındı:', notification);
     });
 
-    // Bildirim tıklandığında
     responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
       console.log('👆 Bildirim tıklandı');
     });
-
-    if (Platform.OS === 'android') {
-      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-        if (canGoBack && webViewRef.current) {
-          webViewRef.current.goBack();
-          return true;
-        }
-        return false;
-      });
-      return () => {
-        backHandler.remove();
-        if (notificationListener.current) {
-          Notifications.removeNotificationSubscription(notificationListener.current);
-        }
-        if (responseListener.current) {
-          Notifications.removeNotificationSubscription(responseListener.current);
-        }
-      };
-    }
 
     return () => {
       if (notificationListener.current) {
@@ -66,6 +45,19 @@ export default function App() {
         Notifications.removeNotificationSubscription(responseListener.current);
       }
     };
+  }, []);
+
+  // Geri tuşu canGoBack değiştiğinde güncellenir
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (canGoBack && webViewRef.current) {
+        webViewRef.current.goBack();
+        return true;
+      }
+      return false;
+    });
+    return () => backHandler.remove();
   }, [canGoBack]);
 
   return (
@@ -175,7 +167,9 @@ async function registerForPushNotifications() {
     }
 
     // Expo push token al
-    const token = (await Notifications.getExpoPushTokenAsync()).data;
+    const token = (await Notifications.getExpoPushTokenAsync({
+      projectId: Constants.expoConfig?.extra?.eas?.projectId,
+    })).data;
     console.log('✅ Expo Push Token:', token);
 
     // Token'ı backend'e gönder
