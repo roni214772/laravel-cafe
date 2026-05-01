@@ -16,7 +16,7 @@ jobs:
       - name: SSH Anahtarını Hazırla
         run: |
           mkdir -p ~/.ssh
-          printf '%s' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           HOST=$(echo "$SSH_HOST" | tr -d '[:space:]')
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
