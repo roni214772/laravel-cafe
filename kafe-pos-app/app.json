@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Kafe POS",
+    "slug": "kafe-pos",
+    "version": "1.0.6",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0a0a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.caffepos.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a0a0a"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.caffepos.app",
+      "versionCode": 5,
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "owner": "roniylmz",
+    "extra": {
+      "eas": {
+        "projectId": "a56c6298-bf20-4bae-9d59-6553d7077a61"
+      }
+    }
+  }
+}

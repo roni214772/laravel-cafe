@@ -1,0 +1,34 @@
+name: Sunucuya Otomatik Deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    steps:
+      - name: SSH Anahtarını Hazırla
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          HOST=$(echo "$SSH_HOST" | tr -d '[:space:]')
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: VDS Sunucusuna Deploy
+        run: |
+          HOST=$(echo "$SSH_HOST" | tr -d '[:space:]')
+          USER=$(echo "$SSH_USER" | tr -d '[:space:]')
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "${USER}@${HOST}" "
+            cd /var/www/cafepro &&
+            git pull origin master &&
+            php artisan config:cache &&
+            php artisan route:cache &&
+            php artisan view:cache
+          "
