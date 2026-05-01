@@ -2,7 +2,7 @@
   "expo": {
     "name": "Kafe POS",
     "slug": "kafe-pos",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -23,7 +23,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.caffepos.app",
-      "versionCode": 5,
+      "versionCode": 6,
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
       ]
