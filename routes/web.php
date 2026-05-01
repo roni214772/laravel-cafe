@@ -150,3 +150,6 @@ Route::get('/menu/{token}', [\App\Http\Controllers\MenuController::class, 'index
 
 // ── Webhook: Dış platformlardan sipariş al (public) ────────────────
 Route::post('/api/paket-siparis/webhook', [PackageOrderController::class, 'webhook']);
+
+// ── Deploy webhook ─────────────────────────────────────────────────
+Route::post('/deploy', [\App\Http\Controllers\DeployController::class, 'handle']);
