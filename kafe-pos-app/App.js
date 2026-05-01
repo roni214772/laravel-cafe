@@ -99,7 +99,9 @@ export default function App() {
                 Alert.alert('Abonelik Bekleniyor', 'Abonelik talebiniz inceleniyor, lütfen bekleyin.');
               }
             }
-          } catch (e) {}
+          } catch (e) {
+            console.warn('onMessage parse hatası:', e);
+          }
         }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
