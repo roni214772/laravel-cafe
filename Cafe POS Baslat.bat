@@ -11,17 +11,27 @@ where php >nul 2>&1 || (
 taskkill /F /IM php.exe >nul 2>&1
 timeout /t 1 /nobreak >nul
 
-:: MySQL (XAMPP) baslat - zaten calisiyor olabilir, hata olsa da devam et
-sc query mysql >nul 2>&1
+:: MySQL (XAMPP) baslat - zaten calisiyor olabilir
+tasklist /FI "IMAGENAME eq mysqld.exe" 2>nul | find /I "mysqld.exe" >nul
 if errorlevel 1 (
   if exist "C:\xampp\mysql\bin\mysqld.exe" (
     echo MySQL baslatiliyor...
     start /MIN "MySQL" "C:\xampp\mysql\bin\mysqld.exe"
-    timeout /t 3 /nobreak >nul
+    echo MySQL'in hazir olması bekleniyor...
+    :wait_mysql
+    "%PHP%" -r "try { new PDO('mysql:host=127.0.0.1;port=3307', 'root', ''); echo 'OK'; } catch(Exception $e) { exit(1); }" >nul 2>&1
+    if errorlevel 1 (
+      timeout /t 1 /nobreak >nul
+      goto wait_mysql
+    )
+    echo MySQL hazir!
+  ) else (
+    echo MySQL bulunamadi! XAMPP kurulu oldugundan emin olun.
+    pause
+    exit /b 1
   )
 ) else (
-  net start mysql >nul 2>&1
-  timeout /t 2 /nobreak >nul
+  echo MySQL zaten calisiyor.
 )
 
 :: Laravel sunucusu

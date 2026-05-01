@@ -12,7 +12,8 @@ class AdminController extends Controller
 {
     public function index()
     {
-        $users = User::withCount(['rooms', 'products'])
+        $users = User::where('role', '!=', 'waiter')
+            ->withCount(['rooms', 'products', 'waiters'])
             ->with(['rooms' => function ($q) {
                 $q->withCount(['pos_orders as order_count']);
             }])
@@ -36,31 +37,66 @@ class AdminController extends Controller
         $bankName       = Setting::get('bank_name',           'Ziraat Bankası');
         $bankIban       = Setting::get('bank_iban',           'TR00 0000 0000 0000 0000 0000 00');
         $bankHolder     = Setting::get('bank_account_holder', 'Ad Soyad');
+        $checkoutNote   = Setting::get('checkout_note', '');
 
-        return view('admin.index', compact('users', 'totalUsers', 'totalRooms', 'totalOrders', 'pendingCount', 'priceMonthly', 'priceQuarterly', 'priceSemi', 'priceYearly', 'bankName', 'bankIban', 'bankHolder'));
+        return view('admin.index', compact('users', 'totalUsers', 'totalRooms', 'totalOrders', 'pendingCount', 'priceMonthly', 'priceQuarterly', 'priceSemi', 'priceYearly', 'bankName', 'bankIban', 'bankHolder', 'checkoutNote'));
+    }
+
+    public function show(User $user)
+    {
+        $user->loadCount(['rooms', 'products']);
+        $user->load(['waiters' => function ($q) {
+            $q->orderBy('created_at', 'desc');
+        }]);
+
+        return view('admin.show', compact('user'));
     }
 
     public function approveSubscription(User $user, \Illuminate\Http\Request $request)
     {
-        // extend_type form'dan geliyorsa onu kullan, yoksa kullanıcının mevcut tipine bak
+        // Tarih ile uzatma
+        if ($request->has('extend_date') && $request->extend_date) {
+            $request->validate(['extend_date' => 'required|date|after:today']);
+            $newDate = \Carbon\Carbon::parse($request->extend_date)->endOfDay();
+
+            $user->update([
+                'subscription_status'     => 'active',
+                'subscription_expires_at' => $newDate,
+            ]);
+
+            // Garsonların abonelik süresini sahibiyle eşitle
+            $user->waiters()->update([
+                'subscription_status'     => 'active',
+                'subscription_expires_at' => $newDate,
+            ]);
+
+            return back()->with('status', "{$user->name} aboneliği {$newDate->format('d.m.Y')} tarihine kadar uzatıldı.");
+        }
+
+        // Pending onayı — varsayılan tip ile
         $validTypes = ['monthly', 'quarterly', 'semi_yearly', 'yearly'];
-        $type = in_array($request->input('extend_type'), $validTypes)
-                    ? $request->input('extend_type')
-                    : (in_array($user->subscription_type, $validTypes) ? $user->subscription_type : 'monthly');
+        $type = in_array($user->subscription_type, $validTypes) ? $user->subscription_type : 'monthly';
 
         $monthsMap = ['monthly' => 1, 'quarterly' => 3, 'semi_yearly' => 6, 'yearly' => 12];
         $months    = $monthsMap[$type];
         $labelMap  = ['monthly' => 'Aylık', 'quarterly' => '3 Aylık', 'semi_yearly' => '6 Aylık', 'yearly' => 'Yıllık'];
 
-        // Mevcut aktif abonelik varsa üzerine ekle
         $base = ($user->subscription_expires_at && $user->subscription_expires_at->isFuture())
             ? $user->subscription_expires_at
             : now();
 
+        $expiresAt = $base->copy()->addMonths($months);
+
         $user->update([
             'subscription_status'      => 'active',
             'subscription_type'        => $type,
-            'subscription_expires_at'  => $base->copy()->addMonths($months),
+            'subscription_expires_at'  => $expiresAt,
+        ]);
+
+        // Garsonların abonelik süresini sahibiyle eşitle
+        $user->waiters()->update([
+            'subscription_status'     => 'active',
+            'subscription_expires_at' => $expiresAt,
         ]);
 
         return back()->with('status', "{$user->name} aboneliği onaylandı ({$labelMap[$type]}).");
@@ -89,11 +125,13 @@ class AdminController extends Controller
             'bank_name'           => 'required|string|max:100',
             'bank_iban'           => 'required|string|max:40',
             'bank_account_holder' => 'required|string|max:100',
+            'checkout_note'       => 'nullable|string|max:500',
         ]);
 
         Setting::set('bank_name',           $request->bank_name);
         Setting::set('bank_iban',           strtoupper(preg_replace('/\s+/', ' ', trim($request->bank_iban))));
         Setting::set('bank_account_holder', $request->bank_account_holder);
+        Setting::set('checkout_note',       $request->checkout_note ?? '');
 
         return back()->with('status', 'Banka bilgileri güncellendi.');
     }
@@ -109,24 +147,20 @@ class AdminController extends Controller
 
     public function cancelSubscription(User $user)
     {
-        // Kullanıcının süresi devam ediyorsa sadece talebi iptal et,
-        // mevcut aktif aboneliğe dokunma
-        if ($user->subscription_expires_at && $user->subscription_expires_at->isFuture()) {
-            $user->update([
-                'subscription_status' => 'active',
-                // subscription_type ve expires_at değişmez — kalan süre korunur
-            ]);
-            return back()->with('status', "{$user->name} yenileme talebi iptal edildi. Mevcut abonelik süresi devam ediyor.");
-        }
-
-        // Süresi dolmuş veya hiç yoksa tamamen sıfırla
         $user->update([
             'subscription_status'     => 'none',
             'subscription_type'       => null,
             'subscription_expires_at' => null,
         ]);
 
-        return back()->with('status', "{$user->name} aboneliği iptal edildi.");
+        // Garsonların aboneliğini de iptal et
+        $user->waiters()->update([
+            'subscription_status'     => 'none',
+            'subscription_type'       => null,
+            'subscription_expires_at' => null,
+        ]);
+
+        return back()->with('status', "{$user->name} aboneliği tamamen iptal edildi ve günleri sıfırlandı.");
     }
 
     public function changePassword(User $user, Request $request)
@@ -192,6 +226,8 @@ class AdminController extends Controller
             $room->delete();
         }
         $user->products()->delete();
+        // Garsonlarını da sil
+        $user->waiters()->delete();
         $user->delete();
 
         return back()->with('status', "{$name} hesabı ve tüm verileri silindi.");

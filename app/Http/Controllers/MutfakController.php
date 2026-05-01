@@ -67,7 +67,7 @@ class MutfakController extends Controller
               }]);
         }])
         ->where('status', 'open')
-        ->where('user_id', auth()->id())
+        ->where('user_id', auth()->user()->effectiveOwnerId())
         ->get();
 
         $orders = [];

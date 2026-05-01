@@ -340,6 +340,14 @@ body{
     <button class="copy-btn" id="copyIban" onclick="doCopy()">Kopyala</button>
   </div>
 
+  {{-- Admin Notu --}}
+  @if(!empty($checkoutNote))
+  <div style="background:var(--s2);border:1px solid rgba(39,160,177,.3);border-radius:10px;padding:13px 16px;margin-bottom:10px">
+    <div style="font-size:.63rem;color:var(--primary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;font-weight:700">📝 Bilgilendirme</div>
+    <div style="font-size:.82rem;color:var(--muted2);line-height:1.6">{!! nl2br(e($checkoutNote)) !!}</div>
+  </div>
+  @endif
+
   {{-- Onayla --}}
   <div class="confirm-box">
     <p>

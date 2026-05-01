@@ -8,7 +8,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\WaiterController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\PackageOrderController;
 
 // ── Auth (misafir) ─────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
@@ -58,11 +60,13 @@ Route::get('/menu/{token}', [\App\Http\Controllers\MenuController::class, 'index
     // Admin paneli (abonelikten muıf)
     Route::middleware('admin')->group(function () {
         Route::get('/admin',                          [AdminController::class, 'index'])->name('admin.index');
+        Route::get('/admin/user/{user}',              [AdminController::class, 'show'])->name('admin.show');
         Route::delete('/admin/user/{user}',           [AdminController::class, 'deleteUser'])->name('admin.delete-user');
         Route::post('/admin/impersonate/{user}',      [AdminController::class, 'impersonate'])->name('admin.impersonate');
         Route::post('/admin/approve/{user}',          [AdminController::class, 'approveSubscription'])->name('admin.approve');
         Route::post('/admin/reject/{user}',           [AdminController::class, 'rejectSubscription'])->name('admin.reject');
         Route::post('/admin/cancel/{user}',           [AdminController::class, 'cancelSubscription'])->name('admin.cancel');
+        Route::get('/admin/cancel/{user}',            fn() => redirect()->route('admin.index'));
         Route::post('/admin/prices',                  [AdminController::class, 'updatePrices'])->name('admin.update-prices');
         Route::post('/admin/bank-settings',           [AdminController::class, 'updateBankSettings'])->name('admin.update-bank');
         Route::post('/admin/user/{user}/change-password', [AdminController::class, 'changePassword'])->name('admin.change-password');
@@ -77,41 +81,72 @@ Route::get('/menu/{token}', [\App\Http\Controllers\MenuController::class, 'index
         Route::get('/mutfak/orders', [MutfakController::class, 'poll'])->name('mutfak.poll');
         Route::post('/mutfak/mark-ready', [MutfakController::class, 'markReady'])->name('mutfak.mark-ready');
 
-        // Adisyon
+        // Adisyon (garson + owner erişebilir)
         Route::get('/adisyon', [AdisyonController::class, 'index'])->name('adisyon.index');
         Route::post('/adisyon/masa-olustur', [AdisyonController::class, 'masaOlustur'])->name('adisyon.masa-olustur');
+        Route::get('/adisyon/ready-check-all', [AdisyonController::class, 'readyCheckAll'])->name('adisyon.ready-check-all');
         Route::get('/adisyon/masa/{room}/data', [AdisyonController::class, 'masaData'])->name('adisyon.masa-data');
         Route::get('/adisyon/masa/{room}/ready-check', [AdisyonController::class, 'readyCheck'])->name('adisyon.ready-check');
         Route::post('/adisyon/masa/{room}/ekle', [AdisyonController::class, 'ekle'])->name('adisyon.ekle');
         Route::post('/adisyon/masa/{room}/sil-item', [AdisyonController::class, 'silItem'])->name('adisyon.sil-item');
         Route::post('/adisyon/masa/{room}/qty', [AdisyonController::class, 'updateQty'])->name('adisyon.qty');
         Route::post('/adisyon/masa/{room}/item-note', [AdisyonController::class, 'updateItemNote'])->name('adisyon.item-note');
-        Route::post('/adisyon/masa/{room}/temizle', [AdisyonController::class, 'temizle'])->name('adisyon.temizle');
-        Route::post('/adisyon/masa/{room}/odeme', [AdisyonController::class, 'odemeAl'])->name('adisyon.odeme');
         Route::post('/adisyon/masa/{room}/rename', [AdisyonController::class, 'masaRename'])->name('adisyon.rename');
         Route::post('/adisyon/masa/{room}/toggle', [AdisyonController::class, 'masaToggle'])->name('adisyon.toggle');
         Route::post('/adisyon/masa/{room}/note', [AdisyonController::class, 'saveNote'])->name('adisyon.note');
         Route::post('/adisyon/masa/{room}/notified', [AdisyonController::class, 'markNotified'])->name('adisyon.notified');
         Route::post('/adisyon/masa/{room}/fire', [AdisyonController::class, 'fireTokitchen'])->name('adisyon.fire');
         Route::post('/adisyon/masa/{room}/transfer', [AdisyonController::class, 'transferMasa'])->name('adisyon.transfer');
-        Route::delete('/adisyon/masa/{room}', [AdisyonController::class, 'masaSil'])->name('adisyon.masa-sil');
 
-        // Rapor & Geçmiş
-        Route::get('/adisyon/rapor', [AdisyonController::class, 'rapor'])->name('adisyon.rapor');
-        Route::get('/adisyon/gecmis', [AdisyonController::class, 'odemeGecmisi'])->name('adisyon.gecmis');
-        Route::delete('/adisyon/order/{order}', [AdisyonController::class, 'deleteOrder'])->name('adisyon.delete-order');
-
-        // Ürün CRUD
+        // Ürün listeleme (garson da görebilmeli)
         Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-        Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-        Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
-        Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
-        // Kategori görselleri
-        Route::get('/categories/images',   [CategoryController::class, 'listImages'])->name('categories.images');
-        Route::post('/categories/image',   [CategoryController::class, 'uploadImage'])->name('categories.upload');
-        Route::delete('/categories/image', [CategoryController::class, 'deleteImage'])->name('categories.delete');
+        // ── Sadece owner erişebilir (garson erişemez) ──
+        Route::middleware('owner')->group(function () {
+            // Ödeme
+            Route::post('/adisyon/masa/{room}/odeme', [AdisyonController::class, 'odemeAl'])->name('adisyon.odeme');
+            // Temizle & Sil
+            Route::post('/adisyon/masa/{room}/temizle', [AdisyonController::class, 'temizle'])->name('adisyon.temizle');
+            Route::delete('/adisyon/masa/{room}', [AdisyonController::class, 'masaSil'])->name('adisyon.masa-sil');
+
+            // Rapor & Geçmiş
+            Route::get('/adisyon/rapor', [AdisyonController::class, 'rapor'])->name('adisyon.rapor');
+            Route::get('/adisyon/gecmis', [AdisyonController::class, 'odemeGecmisi'])->name('adisyon.gecmis');
+            Route::delete('/adisyon/order/{order}', [AdisyonController::class, 'deleteOrder'])->name('adisyon.delete-order');
+
+            // Ürün CRUD (ekleme/düzenleme/silme)
+            Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+            Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+            Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+
+            // Menü İçe Aktar (scrape/import)
+            Route::post('/products/scrape-menu', [ProductController::class, 'scrapeMenu'])->name('products.scrape-menu');
+            Route::post('/products/import-menu', [ProductController::class, 'importMenu'])->name('products.import-menu');
+
+            // Kategori görselleri
+            Route::get('/categories/images',   [CategoryController::class, 'listImages'])->name('categories.images');
+            Route::post('/categories/image',   [CategoryController::class, 'uploadImage'])->name('categories.upload');
+            Route::delete('/categories/image', [CategoryController::class, 'deleteImage'])->name('categories.delete');
+
+            // Garson Yönetimi
+            Route::get('/waiters',           [WaiterController::class, 'index'])->name('waiters.index');
+            Route::post('/waiters',          [WaiterController::class, 'store'])->name('waiters.store');
+            Route::delete('/waiters/{user}', [WaiterController::class, 'destroy'])->name('waiters.destroy');
+
+            // Paket Sipariş Yönetimi
+            Route::get('/paket-siparis',               [PackageOrderController::class, 'index']);
+            Route::post('/paket-siparis',              [PackageOrderController::class, 'store']);
+            Route::get('/paket-siparis/stats',         [PackageOrderController::class, 'stats']);
+            Route::get('/paket-siparis/settings',      [PackageOrderController::class, 'getSettings']);
+            Route::post('/paket-siparis/settings',     [PackageOrderController::class, 'saveSettings']);
+            Route::post('/paket-siparis/test-connection', [PackageOrderController::class, 'testConnection']);
+            Route::post('/paket-siparis/{packageOrder}/status', [PackageOrderController::class, 'updateStatus']);
+            Route::delete('/paket-siparis/{packageOrder}', [PackageOrderController::class, 'destroy']);
+        });
 
     }); // end subscribed
 
 }); // end auth
+
+// ── Webhook: Dış platformlardan sipariş al (public) ────────────────
+Route::post('/api/paket-siparis/webhook', [PackageOrderController::class, 'webhook']);

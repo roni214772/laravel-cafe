@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -21,10 +22,15 @@ class CategoryController extends Controller
         );
         if ($category->image_path) {
             Storage::disk('public')->delete($category->image_path);
+            // Eski thumbnail'ı da sil
+            $oldDir  = dirname($category->image_path);
+            $oldName = basename($category->image_path);
+            Storage::disk('public')->delete($oldDir . '/thumb_' . $oldName);
         }
-        $path = $request->file('image')->store('category_images', 'public');
+        $result = ImageOptimizer::optimizeAndStore($request->file('image'), 'category_images');
+        $path = str_replace('/storage/', '', $result['main']);
         $category->update(['image_path' => $path]);
-        return response()->json(['success' => true, 'url' => Storage::url($path)]);
+        return response()->json(['success' => true, 'url' => $result['main']]);
     }
 
     // DELETE /categories/image  { name }

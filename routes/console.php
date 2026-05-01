@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Her gece 02:00'de veritabanı yedeği al
 Schedule::command('db:backup')->dailyAt('02:00');
+
+// Her 30 saniyede platformlardan sipariş çek (Trendyol, Yemeksepeti, Getir)
+Schedule::command('orders:fetch-platforms')->everyMinute();

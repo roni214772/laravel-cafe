@@ -7,12 +7,12 @@
 
 set -e
 
-DOMAIN="SENIN-DOMAIN.com"          # ← kendi domain'ini yaz
+DOMAIN="_"                          # domain gelince güncellenecek
 APP_DIR="/var/www/cafepro"
 DB_NAME="cafepro"
 DB_USER="cafepro_user"
-DB_PASS="GUCLU-BIR-SIFRE-YAZ"     # ← güçlü şifre yaz
-REPO_URL=""                         # ← git repo URL'si (varsa)
+DB_PASS="CafeP0s_2025!xQ9z"       # güçlü şifre
+REPO_URL="https://github.com/roni214772/laravel-cafe.git"
 
 echo "════════════════════════════════════════"
 echo "  CafePro VDS Kurulumu Başlıyor..."
@@ -25,14 +25,13 @@ apt update && apt upgrade -y
 # ── 2. Gerekli Paketler ──────────────────────────────────────
 echo "[2/9] PHP, Nginx, MySQL, Node.js kuruluyor..."
 apt install -y software-properties-common
-add-apt-repository -y ppa:ondrej/php
 apt update
 apt install -y \
     nginx \
     mysql-server \
-    php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml \
-    php8.3-curl php8.3-zip php8.3-gd php8.3-intl php8.3-bcmath \
-    php8.3-readline php8.3-tokenizer \
+    php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml \
+    php8.4-curl php8.4-zip php8.4-gd php8.4-intl php8.4-bcmath \
+    php8.4-readline php8.4-tokenizer \
     supervisor \
     git unzip curl
 
@@ -57,7 +56,7 @@ echo "[4/9] Proje dosyaları kuruluyor..."
 mkdir -p ${APP_DIR}
 
 if [ -n "$REPO_URL" ]; then
-    git clone ${REPO_URL} ${APP_DIR}
+    git clone --branch master ${REPO_URL} ${APP_DIR}
 else
     echo "  → REPO_URL boş. Dosyaları elle yüklemen gerekiyor:"
     echo "    scp -r ./laravel-cafe/* root@SUNUCU-IP:${APP_DIR}/"
@@ -103,9 +102,14 @@ sed -i "s/SENIN-DOMAIN.com/${DOMAIN}/g" /etc/nginx/sites-available/cafepro
 nginx -t && systemctl reload nginx
 
 # ── 8. SSL (Let's Encrypt) ───────────────────────────────────
-echo "[8/9] SSL sertifikası alınıyor..."
-apt install -y certbot python3-certbot-nginx
-certbot --nginx -d ${DOMAIN} -d www.${DOMAIN} --non-interactive --agree-tos -m admin@${DOMAIN}
+echo "[8/9] SSL sertifikası..."
+if [ "$DOMAIN" = "_" ]; then
+    echo "  → Domain yok, SSL atlanıyor. Domain gelince çalıştır:"
+    echo "    certbot --nginx -d DOMAIN -d www.DOMAIN --agree-tos -m admin@DOMAIN"
+else
+    apt install -y certbot python3-certbot-nginx
+    certbot --nginx -d ${DOMAIN} -d www.${DOMAIN} --non-interactive --agree-tos -m admin@${DOMAIN}
+fi
 
 # ── 9. Supervisor ────────────────────────────────────────────
 echo "[9/9] Supervisor yapılandırılıyor..."

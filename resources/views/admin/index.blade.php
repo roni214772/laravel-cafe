@@ -54,7 +54,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 .alert.error{background:#2a1010;border:1px solid #5a2020;color:#f87171}
 
 /* ── Stats ── */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
 .stat-card{
   background:var(--s2);border:1px solid var(--border);
   border-radius:12px;padding:16px 18px;
@@ -97,6 +97,10 @@ td.mono{font-family:'Courier New',monospace;font-size:.72rem;color:var(--muted2)
 .badge.orange{background:rgba(245,158,11,.12);color:var(--orange);border:1px solid rgba(245,158,11,.3)}
 .badge.red{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.3)}
 .badge.grey{background:rgba(107,114,128,.1);color:var(--muted);border:1px solid var(--border)}
+.badge.days-ok{background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.25)}
+.badge.days-warn{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.badge.days-danger{background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.badge.days-expired{background:rgba(107,114,128,.1);color:var(--muted);border:1px solid var(--border)}
 
 .td-actions{display:flex;gap:5px;align-items:center}
 .btn-imp,.btn-del{
@@ -242,10 +246,52 @@ td.mono{font-family:'Courier New',monospace;font-size:.72rem;color:var(--muted2)
           <input type="text" name="bank_account_holder" value="{{ $bankHolder }}" placeholder="Ad Soyad"
                  style="background:var(--s3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px 12px;font-size:.85rem;font-family:inherit;outline:none;width:200px">
         </div>
+        <div style="display:flex;flex-direction:column;gap:5px;width:100%;margin-top:8px">
+          <label style="font-size:.67rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">📝 Ödeme Sayfası Notu</label>
+          <textarea name="checkout_note" rows="3" placeholder="Kullanıcılara ödeme sayfasında gösterilecek not... (boş bırakılırsa gösterilmez)"
+                    style="background:var(--s3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px 12px;font-size:.82rem;font-family:inherit;outline:none;resize:vertical;width:100%;line-height:1.5">{{ $checkoutNote }}</textarea>
+        </div>
         <button type="submit" class="btn-imp btn-approve" style="height:36px;padding:0 18px;font-size:.78rem">
           ✓ Kaydet
         </button>
       </form>
+    </div>
+  </div>
+
+  {{-- ── İstatistik: Süresi dolmak üzere olan kullanıcılar ── --}}
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-head">
+      <h2>⏰ Süresi Dolmak Üzere</h2>
+      <small>7 gün veya daha az kalan aktif abonelikler</small>
+    </div>
+    <div style="padding:14px 18px">
+      @php
+        $expiringUsers = $users->filter(function($u) {
+          return $u->subscription_expires_at
+            && $u->subscription_status === 'active'
+            && now()->startOfDay()->diffInDays($u->subscription_expires_at->startOfDay(), false) <= 7
+            && now()->startOfDay()->diffInDays($u->subscription_expires_at->startOfDay(), false) >= 0;
+        });
+      @endphp
+      @if($expiringUsers->isEmpty())
+        <p style="color:var(--muted);font-size:.82rem">Süresi dolmak üzere olan kullanıcı yok 👍</p>
+      @else
+        <div style="display:flex;flex-direction:column;gap:8px">
+          @foreach($expiringUsers as $eu)
+            @php $euDays = (int) now()->startOfDay()->diffInDays($eu->subscription_expires_at->startOfDay(), false); @endphp
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--s3);border:1px solid var(--border);border-radius:8px">
+              <strong style="font-size:.82rem">{{ $eu->name }}</strong>
+              <span style="font-size:.72rem;color:var(--muted2);font-family:'Courier New',monospace">{{ $eu->email }}</span>
+              <span style="flex:1"></span>
+              @if($euDays === 0)
+                <span class="badge days-danger">🔥 Bugün bitiyor</span>
+              @else
+                <span class="badge days-danger">🔥 {{ $euDays }} gün kaldı</span>
+              @endif
+            </div>
+          @endforeach
+        </div>
+      @endif
     </div>
   </div>
 
@@ -264,7 +310,9 @@ td.mono{font-family:'Courier New',monospace;font-size:.72rem;color:var(--muted2)
           <th>E-posta</th>
           <th>Kayıt</th>
           <th>Masa</th>
+          <th>Garson</th>
           <th>Abonelik</th>
+          <th>Kalan Gün</th>
           <th>Bitiş</th>
           <th></th>
         </tr>
@@ -273,10 +321,11 @@ td.mono{font-family:'Courier New',monospace;font-size:.72rem;color:var(--muted2)
         @foreach($users as $i => $user)
         <tr>
           <td class="muted">{{ $i + 1 }}</td>
-          <td><strong>{{ $user->name }}</strong></td>
+          <td><a href="{{ route('admin.show', $user) }}" style="color:var(--text);text-decoration:none;font-weight:700">{{ $user->name }}</a></td>
           <td class="mono">{{ $user->email }}</td>
           <td class="muted" style="white-space:nowrap">{{ $user->created_at->format('d.m.Y H:i') }}</td>
           <td><span class="badge green">{{ $user->rooms_count }}</span></td>
+          <td><span class="badge{{ $user->waiters_count > 0 ? ' primary' : ' grey' }}">{{ $user->waiters_count }}</span></td>
           <td>
             @php
               $st = $user->subscription_status;
@@ -296,6 +345,28 @@ td.mono{font-family:'Courier New',monospace;font-size:.72rem;color:var(--muted2)
               <span class="badge grey">Talep Yok</span>
             @endif
           </td>
+          <td style="white-space:nowrap">
+            @if($user->email === auth()->user()->email)
+              <span class="badge admin">∞</span>
+            @elseif($user->subscription_expires_at)
+              @php
+                $kalanGun = (int) now()->startOfDay()->diffInDays($user->subscription_expires_at->startOfDay(), false);
+              @endphp
+              @if($kalanGun > 30)
+                <span class="badge days-ok">{{ $kalanGun }} gün</span>
+              @elseif($kalanGun > 7)
+                <span class="badge days-warn">⚠ {{ $kalanGun }} gün</span>
+              @elseif($kalanGun > 0)
+                <span class="badge days-danger">🔥 {{ $kalanGun }} gün</span>
+              @elseif($kalanGun === 0)
+                <span class="badge days-danger">🔥 Bugün bitiyor</span>
+              @else
+                <span class="badge days-expired">{{ abs($kalanGun) }} gün önce doldu</span>
+              @endif
+            @else
+              <span style="color:var(--muted);font-size:.72rem">—</span>
+            @endif
+          </td>
           <td class="muted" style="white-space:nowrap;font-size:.72rem">
             {{ $user->subscription_expires_at ? $user->subscription_expires_at->format('d.m.Y') : '—' }}
           </td>
@@ -311,21 +382,19 @@ td.mono{font-family:'Courier New',monospace;font-size:.72rem;color:var(--muted2)
                     @csrf
                     <button type="submit" class="btn-del btn-reject">✕ Reddet</button>
                   </form>
-                @elseif($user->subscription_status === 'active')
-                  <form method="POST" action="{{ route('admin.approve', $user) }}" style="display:flex;align-items:center;gap:4px">
-                    @csrf
-                    <select name="extend_type" class="extend-select">
-                      <option value="monthly">Aylık</option>
-                      <option value="quarterly">3 Aylık</option>
-                      <option value="semi_yearly">6 Aylık</option>
-                      <option value="yearly">Yıllık</option>
-                    </select>
-                    <button type="submit" class="btn-imp" title="Süreyi uzat">🔄 Uzat</button>
-                  </form>
+                @endif
+                <form method="POST" action="{{ route('admin.approve', $user) }}" style="display:flex;align-items:center;gap:4px">
+                  @csrf
+                  <input type="date" name="extend_date" min="{{ now()->addDay()->format('Y-m-d') }}"
+                         value="{{ $user->subscription_expires_at ? $user->subscription_expires_at->format('Y-m-d') : now()->addMonth()->format('Y-m-d') }}"
+                         class="extend-select" style="width:130px;padding:0 4px">
+                  <button type="submit" class="btn-imp" title="Tarihe kadar uzat">📅 Uzat</button>
+                </form>
+                @if($user->subscription_status === 'active')
                   <form method="POST" action="{{ route('admin.cancel', $user) }}"
-                        onsubmit="return confirm('{{ addslashes($user->name) }} aboneliği iptal edilsin mi?')">
+                        onsubmit="return confirm('{{ addslashes($user->name) }} aboneliği tamamen iptal edilecek ve günleri sıfırlanacak. Emin misiniz?')">
                     @csrf
-                    <button type="submit" class="btn-del">✕ İptal</button>
+                    <button type="submit" class="btn-del btn-reject">✕ İptal</button>
                   </form>
                 @endif
                 <button type="button" class="btn-imp" onclick="openChgPw({{ $user->id }}, '{{ addslashes($user->name) }}')">🔑 Şifre</button>
@@ -355,7 +424,7 @@ td.mono{font-family:'Courier New',monospace;font-size:.72rem;color:var(--muted2)
           <div class="mob-avatar">{{ mb_substr($user->name, 0, 1) }}</div>
           <div style="min-width:0">
             <div class="mob-name">
-              {{ $user->name }}
+              <a href="{{ route('admin.show', $user) }}" style="color:var(--text);text-decoration:none">{{ $user->name }}</a>
               @if($user->email === auth()->user()->email)
                 <span class="badge admin" style="margin-left:4px">Admin</span>
               @endif
@@ -365,6 +434,9 @@ td.mono{font-family:'Courier New',monospace;font-size:.72rem;color:var(--muted2)
         </div>
         <div class="mob-meta">
           <span class="mob-tag"><strong>{{ $user->rooms_count }}</strong> masa</span>
+          @if($user->waiters_count > 0)
+            <span class="mob-tag" style="color:var(--primary);border-color:rgba(39,160,177,.3)"><strong>{{ $user->waiters_count }}</strong> garson</span>
+          @endif
           @php $st = $user->subscription_status; @endphp
           @if($st === 'pending')
             <span class="mob-tag" style="color:var(--orange);border-color:rgba(245,158,11,.3)">⏳ Bekliyor — {{ $user->subscription_type === 'yearly' ? 'Yıllık' : 'Aylık' }}</span>
@@ -378,6 +450,22 @@ td.mono{font-family:'Courier New',monospace;font-size:.72rem;color:var(--muted2)
             <span class="mob-tag">Talep Yok</span>
           @endif
           <span class="mob-tag">{{ $user->created_at->format('d.m.Y') }}</span>
+          @if($user->subscription_expires_at)
+            @php
+              $kalanGunMob = (int) now()->startOfDay()->diffInDays($user->subscription_expires_at->startOfDay(), false);
+            @endphp
+            @if($kalanGunMob > 30)
+              <span class="mob-tag" style="color:#10b981;border-color:rgba(16,185,129,.3)">{{ $kalanGunMob }} gün kaldı</span>
+            @elseif($kalanGunMob > 7)
+              <span class="mob-tag" style="color:#f59e0b;border-color:rgba(245,158,11,.3)">⚠ {{ $kalanGunMob }} gün kaldı</span>
+            @elseif($kalanGunMob > 0)
+              <span class="mob-tag" style="color:#ef4444;border-color:rgba(239,68,68,.3)">🔥 {{ $kalanGunMob }} gün kaldı</span>
+            @elseif($kalanGunMob === 0)
+              <span class="mob-tag" style="color:#ef4444;border-color:rgba(239,68,68,.3)">🔥 Bugün bitiyor</span>
+            @else
+              <span class="mob-tag">{{ abs($kalanGunMob) }} gün önce doldu</span>
+            @endif
+          @endif
         </div>
         @if($user->email !== auth()->user()->email)
         <div class="mob-actions">
@@ -390,21 +478,19 @@ td.mono{font-family:'Courier New',monospace;font-size:.72rem;color:var(--muted2)
               @csrf
               <button type="submit" class="btn-del btn-reject">✕ Reddet</button>
             </form>
-          @elseif($user->subscription_status === 'active')
-            <form method="POST" action="{{ route('admin.approve', $user) }}" style="display:flex;align-items:center;gap:4px">
-              @csrf
-              <select name="extend_type" class="extend-select">
-                <option value="monthly">Aylık</option>
-                <option value="quarterly">3 Aylık</option>
-                <option value="semi_yearly">6 Aylık</option>
-                <option value="yearly">Yıllık</option>
-              </select>
-              <button type="submit" class="btn-imp">🔄 Uzat</button>
-            </form>
+          @endif
+          <form method="POST" action="{{ route('admin.approve', $user) }}" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+            @csrf
+            <input type="date" name="extend_date" min="{{ now()->addDay()->format('Y-m-d') }}"
+                   value="{{ $user->subscription_expires_at ? $user->subscription_expires_at->format('Y-m-d') : now()->addMonth()->format('Y-m-d') }}"
+                   class="extend-select" style="width:130px;padding:0 4px">
+            <button type="submit" class="btn-imp">📅 Uzat</button>
+          </form>
+          @if($user->subscription_status === 'active')
             <form method="POST" action="{{ route('admin.cancel', $user) }}"
-                  onsubmit="return confirm('{{ addslashes($user->name) }} aboneliği iptal edilsin mi?')">
+                  onsubmit="return confirm('{{ addslashes($user->name) }} aboneliği tamamen iptal edilecek ve günleri sıfırlanacak. Emin misiniz?')">
               @csrf
-              <button type="submit" class="btn-del">✕ İptal</button>
+              <button type="submit" class="btn-del btn-reject">✕ İptal</button>
             </form>
           @endif
           <button type="button" class="btn-imp" onclick="openChgPw({{ $user->id }}, '{{ addslashes($user->name) }}')">🔑 Şifre</button>
